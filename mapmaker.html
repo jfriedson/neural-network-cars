@@ -1,0 +1,137 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <title>Map "Maker"</title>
+        <style type="text/css">
+            * { margin: 0; padding: 0; }
+
+            body, html { height: 100%; width: 100%; overflow: hidden; }
+
+            body { background-color: #000000; }
+        </style>
+    </head>
+    <body>
+        <img id="trackpic" src="silverstone.png" style="display:none">
+        <canvas id="canvas" width="160" height="90"></canvas>
+
+        <script type="text/javascript">
+            window.onload = function() {
+                var mverticies = [];
+
+                var c = document.getElementById("canvas");
+                var ctx = c.getContext("2d");
+                var img = document.getElementById("trackpic");
+                resize();
+
+                var flag = false,
+                    firstX = 0,
+                    firstY = 0,
+                    curX = 0,
+                    curY = 0;
+
+                c.addEventListener("mousedown", function (e) {
+                    e.preventDefault();
+                    if (mverticies.length != 0) {
+                        curX = e.clientX;
+                        curY = e.clientY;
+                        draw();
+                    } else {
+                        firstX = e.clientX;
+                        firstY = e.clientY;
+                        curX = e.clientX;
+                        curY = e.clientY;
+                    }
+                    flag = true;
+                    draw();
+                }, false);
+                c.addEventListener("mousemove", function (e) {
+                    e.preventDefault();
+                    if (flag) {
+                        curX = e.clientX;
+                        curY = e.clientY;
+                        draw();
+                    }
+                }, false);
+                c.addEventListener("mouseup", function (e) {
+                    e.preventDefault();
+                    if (flag) {
+                        if (mverticies.length != 0) {
+                            mverticies.push([curX, curY]);
+                        } else {
+                            mverticies.push([firstX, firstY]);
+                            mverticies.push([curX, curY]);
+                        }
+                        flag = false;
+                    }
+                }, false);
+                c.addEventListener("mouseout", function (e) {
+                    e.preventDefault();
+                    if(flag) {
+                        flag = false;
+                        draw();
+                    }
+                }, false);
+
+                window.onkeydown = function (e) {
+                    e.preventDefault();
+                    if(String.fromCharCode(e.keyCode) == 'D') {
+                        if(mverticies.length != 0) {
+                            if(mverticies.length != 2)
+                                mverticies.pop();
+                            else
+                                mverticies = [];
+                        }
+                        draw();
+                    }
+                    if(String.fromCharCode(e.keyCode) == 'S')
+                        save();
+                };
+
+
+                function draw() {
+                    ctx.drawImage(img, 0, 0);
+                    ctx.strokeStyle = 'red';
+                    ctx.lineWidth = 1;
+
+                    if(mverticies.length != 0) {
+                        ctx.beginPath();
+                        ctx.moveTo(mverticies[0][0], mverticies[0][1]);
+                        for(var i = 1; i < mverticies.length; ++i) {
+                            ctx.lineTo(mverticies[i][0], mverticies[i][1]);
+                        }
+                        if(flag) {
+                            ctx.lineTo(curX, curY);
+                        }
+                        ctx.closePath();
+                        ctx.stroke();
+                    }
+                    else {
+                        if(flag) {
+                            ctx.beginPath();
+                            ctx.moveTo(firstX, firstY);
+                            ctx.lineTo(curX, curY);
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                window.addEventListener('resize', resize);
+                function resize() {
+                    c.width = window.innerWidth;
+                    c.height = window.innerHeight;
+                    draw();
+                }
+                
+                function save() {
+                    var translated = [[0,0]];
+                    for(var i = 1; i < mverticies.length; ++i) {
+                        translated.push([mverticies[i][0]-mverticies[0][0],mverticies[i][1]-mverticies[0][1]]);
+                    }
+
+                    console.log(translated);
+                }
+            }
+        </script>
+    </body>
+</html>
