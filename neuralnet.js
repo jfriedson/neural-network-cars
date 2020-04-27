@@ -7,7 +7,6 @@ class Genome {
 }
 
 
-
 class NNet {
     constructor() {
         this.input_cnt = null;
@@ -83,6 +82,27 @@ class NNet {
         this.output_layer.populate(hidden_neurons, outputs);
     }
 
+    saveNet() {
+        var output = {};
+
+        output.input_cnt = this.input_cnt;
+        output.output_cnt = this.output_cnt;
+        output.hidden_layers = this.hidden_layers;
+        output.output_layer = this.output_layer;
+
+        return output;
+    }
+
+    LoadNet(nn_string) {
+        JSON.parse(nn_string);
+
+        this.input_cnt = nn_string.input_cnt;
+        this.output_cnt = nn_string.output_cnt;
+        this.input_layer = nn_string.input_layer;
+        this.hidden_layers = nn_string.hidden_layers;
+        this.output_layer = nn_string.output_layer;
+    }
+
     releaseNet() {
         this.input_cnt = null;
         this.output_cnt = null;
@@ -114,32 +134,30 @@ class NNet {
         this.output_cnt = outputs;
         var neurons = [];
 
-        var hidden = new NLayer(),
-            split = 0;
+        var hidden = new NLayer();
         for(var n = 0; n < hidden_neurons; ++n) {
             var weights = [];
 
-            for (var i = 0; i < inputs + 1; ++i) {
-                ++split;
+            for (var i = 0; i < inputs; ++i) {
                 weights.push(genome.weights[n * hidden_neurons + i]);
             }
             
             neurons.push(new NCell());
             neurons[n].init(inputs, weights);
         }
+
+        var split = (inputs*hidden_neurons),
+            split_last = split;
         hidden.LoadLayer(neurons);
         this.hidden_layers.push(hidden);
-
-        var split_last = split;
         for (var hl = 1; hl < hidden_layers; ++hl) {
             hidden = new NLayer();
             neurons = [];
             for(var n = 0; n < hidden_neurons; ++n) {
                 var weights = [];
 
-                for (var i = 0; i < hidden_neurons + 1; ++i) {
-                    ++split;
-                    weights.push(genome.weights[split_last + n * hidden_neurons + i]);
+                for (var i = 0; i < hidden_neurons; ++i) {
+                    weights.push(genome.weights[split_last + (hl-1) * hidden_layers * hidden_neurons + n * hidden_neurons + i]);
                 }
                 
                 neurons.push(new NCell());
@@ -148,14 +166,14 @@ class NNet {
             hidden.LoadLayer(neurons);
             this.hidden_layers.push(hidden);
 
-            split_last = split;
+            split += hidden_neurons**2;
         }
 
         var output_weights = hidden_neurons * outputs;
         neurons = [];
         for (var o = 0; o < outputs; ++o) {
             var weights = [];
-            for (var n = 0; n < hidden_neurons + 1; ++n) {
+            for (var n = 0; n < hidden_neurons; ++n) {
                 weights.push(genome.weights[split + o * hidden_neurons + n]);
             }
             
@@ -204,12 +222,12 @@ class NLayer {
         for (const n in this.neurons) {
             var activation = 0;
             
-            for (var i = 0; i < this.neurons[n].input_cnt-1; ++i) {
+            for (var i = 0; i < this.neurons[n].input_cnt-2; ++i) {
                 activation += input[idx] * this.neurons[n].weights[i];
                 ++idx;
             }
 
-            activation += this.neurons[n].weights[this.neurons[n].input_cnt] * BIAS;
+            activation += this.neurons[n].weights[this.neurons[n].input_cnt-1] * BIAS;
             output.push(this.sigmoid(activation, 1));
             idx = 0;
         }

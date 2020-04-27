@@ -50,8 +50,7 @@ class GenAlgo {
         return output;
     }
     CrossBreed(g1, g2) {
-        var weight_cnt = g1.weights.length,
-            crossover = Math.floor(Math.random() * (weight_cnt-2))+1;
+        var weight_cnt = g1.weights.length;
 
         var b1 = new Genome();
         b1.id = this.genomeid;
@@ -63,14 +62,15 @@ class GenAlgo {
         b2.weights = [];
         ++this.genomeid;
 
-        for (var i = 0; i < crossover; ++i) {
-            b1.weights.push(g1.weights[i]);
-            b2.weights.push(g2.weights[i]);
-        }
-
-        for (var i = crossover; i < weight_cnt; ++i) {
-            b1.weights.push(g2.weights[i]);
-            b2.weights.push(g1.weights[i]);
+        for (var i = 0; i < weight_cnt; ++i) {
+            if(Math.random() > .5) {
+                b1.weights.push(g1.weights[i]);
+                b2.weights.push(g2.weights[i]);
+            }
+            else {
+                b1.weights.push(g2.weights[i]);
+                b2.weights.push(g1.weights[i]);
+            }
         }
 
         return [b1, b2];
@@ -153,7 +153,7 @@ class GenAlgo {
         this.current_genome = -1;
         this.population_cnt = pop_cnt;
         this.population = [];
-        var weight_cnt = inputs * hidden_neurons + hidden_layers * hidden_neurons**2 + hidden_neurons * outputs - 100;
+        var weight_cnt = inputs * hidden_neurons + hidden_layers * hidden_neurons**2 + hidden_neurons * outputs;
 
         for(var i = 0; i < this.population_cnt; ++i) {
             var genome = new Genome();
@@ -172,8 +172,7 @@ class GenAlgo {
         // Keep best
         var best_genomes = this.GetBestCases(m_champions);
         if(best_genomes.length > 0) {
-            var best = best_genomes[0];
-            children.push(best);
+            children.push(best_genomes[0]);
 
             var b = null;
             for(var i = 0; i < best_genomes.length; ++i) {
@@ -193,6 +192,7 @@ class GenAlgo {
                 }
             }
         }
+
         var remaining = this.population_cnt - children.length;
 
         if(best_genomes.length == 0 || this.generation < 10) {
@@ -200,7 +200,7 @@ class GenAlgo {
                 children.push(this.CreateNewGenome(this.population[0].weights.length));
             }
         }
-        else if(this.generation < 20) {
+        else if(this.generation % 2) {
             while(remaining > 0) {
                 for (var i = 0; i < best_genomes.length; ++i) {
                     b = this.CrossBreed(best_genomes[i], this.CreateNewGenome(this.population[0].weights.length));
@@ -230,8 +230,6 @@ class GenAlgo {
         this.current_genome = -1;
         ++this.generation;
     }
-
-    //GenerateCrossoverSplits(int neuronsPerHidden, int inputs, int outputs);
 
     SetGenomeFitness(idx, fitness) {
         if (idx >= this.population.length)
