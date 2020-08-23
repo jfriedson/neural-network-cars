@@ -187,8 +187,6 @@ class NNet {
 
 
 
-const BIAS = -1;
-
 class NLayer {
     constructor() {
         this.neuron_cnt = null;
@@ -222,12 +220,12 @@ class NLayer {
         for (const n in this.neurons) {
             var activation = 0;
             
-            for (var i = 0; i < this.neurons[n].input_cnt-2; ++i) {
+            for (var i = 0; i < this.neurons[n].input_cnt-1; ++i) {
                 activation += input[idx] * this.neurons[n].weights[i];
                 ++idx;
             }
 
-            activation += this.neurons[n].weights[this.neurons[n].input_cnt-1] * BIAS;
+            activation += 1;    // bias
             output.push(this.sigmoid(activation, 1));
             idx = 0;
         }

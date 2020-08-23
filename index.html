@@ -14,22 +14,24 @@
     <body>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.2.1/pixi.min.js"></script>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p2.js/0.7.1/p2.min.js"></script>
-        <script type="text/javascript" src="stats.min.js"></script>
         <script type="text/javascript">
             // neural network settings
-            var m_hidden_layers = 1,
-                m_hidden_neurons = 15; // todo - fix hidden > inputs
+            var m_hidden_layers = 2,
+                m_hidden_neurons = 10;
 
-            var m_mutation_rate = 0.05,
-                m_max_perbetuation = 0.1;
+            var m_mutation_rate = 0.25,
+                m_max_perbetuation = 0.25;
 
             // simulation settings
-            var m_car_amt = 23,
-                m_render_fps = 1,
-                m_sim_intv_fps = 1000,
-                m_sim_world_fps = 64,
+            var m_populations = 3,  // to be implemented
+                m_car_amt = 23,
+                m_render_fps = 30,
+                m_render_delay = 1000/m_render_fps,
+                m_sim_intv_fps = 64,    // world steps per second
+                m_sim_world_fps = 64,   // world step size
                 m_sim_delay = 1000/m_sim_intv_fps,
-                m_sim_step = (1000/m_sim_world_fps)/1000;
+                m_sim_step = 1000/m_sim_world_fps/1000;
+
             var time_limit = 7;
             var m_champions = 3;
         </script>

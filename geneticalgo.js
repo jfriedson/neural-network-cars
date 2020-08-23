@@ -15,7 +15,7 @@ class GenAlgo {
             output = [];
 
         while (genome_cnt < genomes) {
-            if (run_cnt > genomes)
+            if (run_cnt == genomes)
                 break;
 
             ++run_cnt;
@@ -41,6 +41,9 @@ class GenAlgo {
             if (best_idx != -1) {
                 ++genome_cnt;
                 output.push(this.population[best_idx]);
+
+                if(best_fit < 100)
+                    genomes = 2;
             }
             else {
                 break;
@@ -76,11 +79,15 @@ class GenAlgo {
         return [b1, b2];
     }
     Mutate(genome) {
-        for (const w in genome.weights)
-            if (Math.random() - Math.random() < m_mutation_rate)
-                genome.weights[w] += (Math.random() - Math.random()) * m_max_perbetuation;
+        var mutated = new Genome();
+        mutated = JSON.parse(JSON.stringify(genome));
+        for (const w in mutated.weights)
+        {
+            if (Math.random() < m_mutation_rate)
+                mutated.weights[w] += (Math.random() - Math.random()) * m_max_perbetuation;
+        }
 
-        return genome;
+        return mutated;
     }
     CreateNewGenome(weight_cnt) {
         var genome = new Genome();
@@ -173,6 +180,10 @@ class GenAlgo {
         var best_genomes = this.GetBestCases(m_champions);
         if(best_genomes.length > 0) {
             children.push(best_genomes[0]);
+            if(best_genomes.length > 1)
+                children.push(best_genomes[1]);
+            if(best_genomes.length > 2)
+                children.push(best_genomes[2]);
 
             var b = null;
             for(var i = 0; i < best_genomes.length; ++i) {
@@ -200,13 +211,24 @@ class GenAlgo {
                 children.push(this.CreateNewGenome(this.population[0].weights.length));
             }
         }
-        else if(this.generation % 2) {
+        else if(this.generation % 3 == 0) {
             while(remaining > 0) {
                 for (var i = 0; i < best_genomes.length; ++i) {
                     b = this.CrossBreed(best_genomes[i], this.CreateNewGenome(this.population[0].weights.length));
 
                     b[0] = this.Mutate(b[0]);
                     b[1] = this.Mutate(b[1]);
+                    children.push(b[0]);
+                    children.push(b[1]);
+                    remaining -= 2;
+                }
+            }
+        }
+        else if(this.generation % 3 == 1) {
+            while(remaining > 0) {
+                for (var i = 0; i < best_genomes.length; ++i) {
+                    b = this.CrossBreed(best_genomes[i], this.CreateNewGenome(this.population[0].weights.length));
+
                     children.push(b[0]);
                     children.push(b[1]);
                     remaining -= 2;
