@@ -32,3 +32,6 @@ Add evaluation mode that should only display a single car with the neural networ
 
 ## To do
 Fix intervals/fps counter
+
+
+The silverstone track image used to create the demo model is copied from https://commons.wikimedia.org/wiki/File:Evolution_of_Silverstone_Grand_Prix_Circuit_1949_to_present.png
