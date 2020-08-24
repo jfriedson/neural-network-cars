@@ -229,6 +229,7 @@ class NLayer {
             output.push(this.sigmoid(activation, 1));
             idx = 0;
         }
+        
         return output;
     }
 

@@ -9,13 +9,12 @@ class GenAlgo {
         this.crossover_splits = [];
     }
 
-    GetBestCases(genomes) {
-        var genome_cnt = 0,
-            run_cnt = 0,
+    GetBestCases(champion_cnt) {
+        var run_cnt = 0,
             output = [];
 
-        while (genome_cnt < genomes) {
-            if (run_cnt == genomes)
+        while (output.length < champion_cnt) {
+            if (run_cnt == champion_cnt)
                 break;
 
             ++run_cnt;
@@ -39,11 +38,10 @@ class GenAlgo {
             }
 
             if (best_idx != -1) {
-                ++genome_cnt;
                 output.push(this.population[best_idx]);
 
                 if(best_fit < 100)
-                    genomes = 2;
+                    champion_cnt = 2;
             }
             else {
                 break;
@@ -87,6 +85,9 @@ class GenAlgo {
                 mutated.weights[w] += (Math.random() - Math.random()) * m_max_perbetuation;
         }
 
+        genome.id = this.genomeid;
+        ++this.genomeid;
+        
         return mutated;
     }
     CreateNewGenome(weight_cnt) {

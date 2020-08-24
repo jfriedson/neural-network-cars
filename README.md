@@ -1,5 +1,5 @@
 # Car AI - Neural Network Trained by a Genetic Algorithm
-This demo is meant to demonstrate the process of breeding a neural network driven car through the use of a genetical algorithn with the goal of having the car navigate a race track quickly using 7 forward-facing depth sensors as input for the neural network.  The neural network operates the car's steering angle which has a maximum of 45 degrees (to the left and the right from center), gas throttle, standard break force, and e-break force.\
+This demo is meant to demonstrate the process of breeding a neural network driven car through the use of a genetical algorithm with the goal of having the car navigate a race track quickly using 7 forward-facing depth sensors as input for the neural network.  The neural network operates the car's steering angle which has a maximum of 45 degrees (to the left and the right from center), gas throttle, standard break force, and e-break force.\
 The size of the neural network's "hidden" layers is configurable, and I have found that a configuration of 2 hidden layers each containing 10 cells is able to be trained to complete the demo fairly quickly even if the first few generations see little success.
 
 ## How to use
@@ -10,6 +10,7 @@ Python (2.7 and 3.8 both work) and the shapely package are required for this pro
 3. Open mapmakerp2.py in a text editor and replace the value of the variable "line" at the top of the file with the value from the browser's console.
 4. Run mapmakerp2.py in python.
 5. Copy both arrays to a track variable at the top of the smartcar.js file.\
+</br>
 Checkpoints have to be created through trial and error, but mapmakerp2.py may be updated to do this programmatically in the future.
 
 ### Run the demo
