@@ -225,7 +225,7 @@ class NLayer {
                 ++idx;
             }
 
-            activation += 1;    // bias
+            activation += 1;    // bias to get the car moving, also causes steering bias
             output.push(this.sigmoid(activation, 1));
             idx = 0;
         }

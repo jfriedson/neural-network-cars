@@ -52,6 +52,8 @@
         scores.push({racing: true, chkpts : 0, times : [m_sim_steps], score : 0});
     }
 
+    var record_chkpts = 0;
+
    /* var scoreboard = new PIXI.Text('No record yet');;
     scoreboard.x = track_data.start[0];
     scoreboard.y = track_data.start[1];
@@ -115,7 +117,7 @@
             scores[c].times.push(m_sim_steps);
             scores[c].score += 100;
             //  Use this to improve track times;
-            if (gen_algo.generation <= 10 || gen_algo.generation >= 200)
+            if (record_chkpts == 0 || record_chkpts == 9)
                 scores[c].score += time_limit - (scores[c].times[scores[c].times.length-1] - scores[c].times[scores[c].times.length-2])/m_sim_world_fps;
         }
         // crash
@@ -123,6 +125,7 @@
             if(!get_pt && scores[c].racing) {
                 if(score_by_dist && scores[c].chkpts >= 3)
                     scores[c].score += (cars[c].body.position[0] > track.chkpts[scores[c].chkpts-1].position[0] ? 1 : -1) * Math.sqrt((cars[c].body.position[0]-track.chkpts[scores[c].chkpts-1].position[0])**2 + (cars[c].body.position[1]-track.chkpts[scores[c].chkpts-1].position[1])**2);
+                
                 scores[c].racing = false;
                 gen_algo.SetGenomeFitness(c,scores[c].score);
 
@@ -133,7 +136,7 @@
     });
 
 
-    var scoreboard = new PIXI.Text("Click to toggle sim speed\nworld 0fps\nrenderer 0fps\n\nGeneration 1\nLeaderboard",{fontFamily : 'Arial', fontSize: 30, fill : 0xffffff, align : 'left'}),
+    var scoreboard = new PIXI.Text("CLICK to toggle sim speed\nworld 0fps\nrenderer 0fps\n\nGeneration 1\nLeaderboard",{fontFamily : 'Arial', fontSize: 30, fill : 0xffffff, align : 'left'}),
         sim_times = [],
         render_times = [];
     scoreboard.x = 5;
@@ -226,12 +229,14 @@
             if(racing == 0) {
                 gen_algo.BreedPopulation();
 
-                var best_score = 0;
+                var best_score = 0,
+                    best_chkpt = 0;
                 for (nn in NNets) {
                     NNets[nn].fromGenome(gen_algo.GetNextGenome(), 8, m_hidden_layers, m_hidden_neurons, 4);
 
                     if(scores[nn].score > best_score) {
                         best_score = scores[nn].score;
+                        best_chkpt = scores[nn].chkpts;
                     }
 
                     scores[nn] = {racing: true, chkpts : 0, times : [m_sim_steps], score : 0};
@@ -244,6 +249,7 @@
 
                 if(best_score > record_score) {
                     record_score = best_score;
+                    record_chkpts = best_chkpt;
                     console.log("New record of " + record_score.toFixed(3) + " in gen " + (gen_algo.generation-1) + " at " + Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(Date.now()) + " after " + Math.floor((performance.now()-m_start_time)/1440000) + "hours " + Math.floor((performance.now()-m_start_time)/60000)%60 + "mins " + Math.floor((performance.now()-m_start_time)/1000)%60 + "s");
                     if (text.length == 11) {
                         for(var i = 6; i < 11; ++i)
