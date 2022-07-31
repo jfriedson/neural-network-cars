@@ -1,42 +1,43 @@
 <html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <title>Smart Car</title>
-        <style type="text/css">
-            * { margin: 0; padding: 0; }
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<title>Smart Car</title>
+		<style type="text/css">
+			* { margin: 0; padding: 0; }
 
-            body, html { height: 100%; width: 100%; overflow: hidden; }
+			body, html { height: 100%; width: 100%; overflow: hidden; }
 
-            body { background-color: #000000; }
-        </style>
-    </head>
-    <body>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.2.1/pixi.min.js"></script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p2.js/0.7.1/p2.min.js"></script>
-        <script type="text/javascript">
-            // neural network settings
-            var m_hidden_layers = 2,
-                m_hidden_neurons = 10;
+			body { background-color: #000000; }
+		</style>
+	</head>
+	<body>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.1.1/browser/pixi.min.js"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p2.js/0.7.1/p2.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+		<script type="text/javascript">
+			// neural network settings
+			var m_hidden_layers = 1,
+				m_hidden_neurons = 10;
 
-            var m_mutation_rate = 0.25,
-                m_max_perbetuation = 0.25;
+			var m_mutation_chance = 0.25,
+				m_learning_rate = 0.15;
 
-            // simulation settings
-            var m_populations = 3,  // to be implemented
-                m_car_amt = 23,
-                m_render_fps = 30,
-                m_render_delay = 1000/m_render_fps,
-                m_sim_intv_fps = 64,    // world steps per second
-                m_sim_world_fps = 64,   // world step size
-                m_sim_delay = 1000/m_sim_intv_fps,
-                m_sim_step = 1000/m_sim_world_fps/1000;
+			// simulation settings
+			var m_populations = 3,  // to be implemented
+				m_car_amt = 30,
+				m_render_fps = 30,
+				m_render_delay = 1000/m_render_fps,
+				m_sim_intv_fps = 64,    // world steps per second
+				m_sim_world_fps = 64,   // world step size
+				m_sim_delay = 1000/m_sim_intv_fps,
+				m_sim_step = 1000/m_sim_world_fps/1000;
 
-            var time_limit = 7;
-            var m_champions = 3;
-        </script>
-        <script type="text/javascript" src="neuralnet.js"></script>
-        <script type="text/javascript" src="geneticalgo.js"></script>
-        <script type="text/javascript" src="smartcar.js"></script>
-    </body>
+			var time_limit = 7;
+			var m_champions = 3;
+		</script>
+		<script type="text/javascript" src="neuralnet.js"></script>
+		<script type="text/javascript" src="geneticalgo.js"></script>
+		<script type="text/javascript" src="smartcar.js"></script>
+	</body>
 </html>

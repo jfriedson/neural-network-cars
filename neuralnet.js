@@ -1,293 +1,166 @@
-class Genome {
-    constructor() {
-        this.fitness = null;
-        this.id = null;
-        this.weights = [];
-    }
-}
-
-
 class NNet {
-    constructor() {
-        this.input_cnt = null;
-        this.output_cnt = null;
-        this.inputs = [];
-        this.input_layer = null;
-        this.hidden_layers = [];
-        this.output_layer = null;
-        this.outputs = [];
-    }
+	constructor(init, inputs, hidden_layers, output_layer, hidden_neurons) {
+		this.inputs = inputs;
+		this.hidden_layers = [];
+		this.output_layer = null;
 
-    predict(input) {
-        this.inputs = input;
-        this.outputs = [];
+		// if init is true, create network with random weights and biases
+		if(init) {
+			this.hidden_layers.push(new NNLayer(true, inputs, hidden_neurons, Activations.leakyrelu));
+			for (var hl = 1; hl < hidden_layers; hl++)
+				this.hidden_layers.push(new NNLayer(true, hidden_neurons, hidden_neurons, Activations.leakyrelu));
 
-        for(const l in this.hidden_layers) {
-            if(l > 0)
-                this.inputs = this.outputs;
+			this.output_layer = new NNLayer(true, hidden_neurons, output_layer, Activations.sigmoid);
+		}
+		else {
+			this.hidden_layers.push(new NNLayer(false, inputs, hidden_layers[0].neurons, Activations.leakyrelu));
+			for (var hl = 1; hl < hidden_layers; hl++)
+				this.hidden_layers.push(new NNLayer(false, net_obj.hidden_layers[0].neurons.length, net_obj.hidden_layers[hl].neurons, Activations.leakyrelu));
 
-            this.outputs = this.hidden_layers[l].predict(this.inputs);
-        }
+			this.output_layer = new NNLayer(false, net_obj.hidden_layers[0].neurons.length, output_layer.neurons, Activations.sigmoid);
+		}
+	}
 
-        this.inputs = this.outputs;
+	forward(input) {
+		if(input.length != this.inputs) {
+			console.log(input.length + "   " + this.inputs)
+			console.log("input array length doesn't match the number of inputs expected by the network")
+			return [.5,1,0,0];
+		}
 
-        this.outputs = this.output_layer.predict(this.inputs);
+		var outputs = [];
 
-        return this.outputs;
-    }
-    printnet(input) {
-        this.inputs = input;
-        this.outputs = [];
-        var output = [input];
+		for (const hl in this.hidden_layers) {
+			if(hl > 0)
+				input = outputs;
 
-        for(const l in this.hidden_layers) {
-            if(l > 0)
-                this.inputs = this.outputs;
+			outputs = this.hidden_layers[hl].forward(input);
+		}
 
-            this.outputs = this.hidden_layers[l].predict(this.inputs);
-            output.push(this.outputs);
-        }
+		input = outputs;
+		outputs = this.output_layer.forward(input);
 
-        this.inputs = this.outputs;
-        this.outputs = this.output_layer.predict(this.inputs);
-        output.push(this.outputs);
+		return outputs;
+	}
 
-        return output;
-    }
-    getOutput(id) {
-        if (id >= this.output_cnt)
-            return 0;
+	save() {
+		var net_obj = {};
 
-        return this.outputs[id];
-    }
-    getOutputcnt() {
-        return this.output_cnt;
-    }
+		net_obj.inputs = this.inputs;
+		net_obj.hidden_layers = this.hidden_layers;
+		net_obj.output_layer = this.output_layer;
 
-    createNet(inputs, hidden_layers, hidden_neurons, outputs) {
-        this.input_cnt = inputs;
-        this.output_cnt = outputs;
+		return JSON.stringify(net_obj);
+	}
 
-        var layer = new NLayer();
-        layer.populate(inputs, hidden_neurons);
-        this.hidden_layers.push(layer);
+	load(net_obj) {
+		this.inputs = net_obj.inputs;
+		this.hidden_layers = [];
 
-        for (var hl = 1; hl < hidden_layers; ++hl) {
-            layer = new NLayer();
-            layer.populate(hidden_neurons, hidden_neurons);
-            this.hidden_layers.push(layer);
-        }
+		this.hidden_layers.push(new NNLayer(false, this.inputs, net_obj.hidden_layers[0].neurons, Activations.leakyrelu));
+		for (var hl = 1; hl < net_obj.hidden_layers.length; hl++)
+			this.hidden_layers.push(new NNLayer(false, net_obj.hidden_layers[0].neurons.length, net_obj.hidden_layers[hl].neurons, Activations.leakyrelu));
 
-        this.output_layer = new NLayer();
-        this.output_layer.populate(hidden_neurons, outputs);
-    }
-
-    saveNet() {
-        var output = {};
-
-        output.input_cnt = this.input_cnt;
-        output.output_cnt = this.output_cnt;
-        output.hidden_layers = this.hidden_layers;
-        output.output_layer = this.output_layer;
-
-        return output;
-    }
-
-    LoadNet(nn_string) {
-        JSON.parse(nn_string);
-
-        this.input_cnt = nn_string.input_cnt;
-        this.output_cnt = nn_string.output_cnt;
-        this.input_layer = nn_string.input_layer;
-        this.hidden_layers = nn_string.hidden_layers;
-        this.output_layer = nn_string.output_layer;
-    }
-
-    releaseNet() {
-        this.input_cnt = null;
-        this.output_cnt = null;
-        this.inputs = [];
-        this.input_layer = null;
-        this.hidden_layers = [];
-        this.output_layer = null;
-        this.outputs = [];
-    }
-
-    toGenome() {
-        var genome = new Genome();
-        for (hl in this.hidden_layers) {
-            var weights = this.hidden_layers[hl].getWeights();
-            for (w in weights)
-                genome.weights.push(weights[w]);
-        }
-
-        var weights = this.output_layer.getWeights();
-        for(w in weights)
-            genome.weights.push(weights[w]);
-
-        return genome;
-    }
-    fromGenome(genome, inputs, hidden_layers, hidden_neurons, outputs) {
-        this.releaseNet();
-
-        this.input_cnt = inputs;
-        this.output_cnt = outputs;
-        var neurons = [];
-
-        var hidden = new NLayer();
-        for(var n = 0; n < hidden_neurons; ++n) {
-            var weights = [];
-
-            for (var i = 0; i < inputs; ++i) {
-                weights.push(genome.weights[n * hidden_neurons + i]);
-            }
-            
-            neurons.push(new NCell());
-            neurons[n].init(inputs, weights);
-        }
-
-        var split = (inputs*hidden_neurons),
-            split_last = split;
-        hidden.LoadLayer(neurons);
-        this.hidden_layers.push(hidden);
-        for (var hl = 1; hl < hidden_layers; ++hl) {
-            hidden = new NLayer();
-            neurons = [];
-            for(var n = 0; n < hidden_neurons; ++n) {
-                var weights = [];
-
-                for (var i = 0; i < hidden_neurons; ++i) {
-                    weights.push(genome.weights[split_last + (hl-1) * hidden_layers * hidden_neurons + n * hidden_neurons + i]);
-                }
-                
-                neurons.push(new NCell());
-                neurons[n].init(hidden_neurons, weights);
-            }
-            hidden.LoadLayer(neurons);
-            this.hidden_layers.push(hidden);
-
-            split += hidden_neurons**2;
-        }
-
-        var output_weights = hidden_neurons * outputs;
-        neurons = [];
-        for (var o = 0; o < outputs; ++o) {
-            var weights = [];
-            for (var n = 0; n < hidden_neurons; ++n) {
-                weights.push(genome.weights[split + o * hidden_neurons + n]);
-            }
-            
-            neurons.push(new NCell());
-            neurons[o].init(hidden_neurons, weights);
-        }
-        this.output_layer = new NLayer();
-        this.output_layer.LoadLayer(neurons);
-    }
+		this.output_layer = new NNLayer(false, net_obj.hidden_layers[0].neurons.length, net_obj.output_layer.neurons, Activations.sigmoid);
+	}
 }
 
 
+class Activations {
+	static linear(z) {
+		return z;
+	}
 
-class NLayer {
-    constructor() {
-        this.neuron_cnt = null;
-        this.input_cnt = null;
-        this.neurons = [];
-    }
+	static relu(z) {
+		return Math.max(0, z);
+	}
 
-    populate(input_cnt, neuron_cnt) {
-        this.input_cnt = input_cnt;
-        this.neuron_cnt = neuron_cnt;
-        this.neurons = [];
+	static leakyrelu(z) {
+		return Math.max(z * .1, z);
+	}
 
-        for (var n = 0; n < neuron_cnt; ++n) {
-            this.neurons.push(new NCell());
-            this.neurons[this.neurons.length-1].populate(input_cnt);
-        }
-    }
+	static sigmoid(z) {
+		return 1 / (1 + Math.exp(-z));
+	}
+}
 
-    sigmoid(a, p) {
-        return (1 / (1 + Math.exp((-a)/p)));
-    }
+class NNLayer {
+	constructor(init, inputs, neurons, activation = Activations.linear) {
+		this.inputs = inputs;
+		this.neurons = [];
+		this.activation = activation;
 
-    bipolarsigmoid(a, p) {
-        return (2 / (1 + Math.exp((-a)/p)) - 1);
-    }
+		if(init) {
+			for (var n = 0; n < neurons; n++)
+				this.neurons.push(new Neuron(true, inputs));
+		}
+		else {
+			for (const n in neurons)
+				this.neurons.push(new Neuron(false, neurons[n].weights, neurons[n].bias));
+		}
+	}
 
-    predict(input) {
-        var output = [];
+	linear(z) {
+		return z;
+	}
 
-        var idx = 0;
-        for (const n in this.neurons) {
-            var activation = 0;
-            
-            for (var i = 0; i < this.neurons[n].input_cnt-1; ++i) {
-                activation += input[idx] * this.neurons[n].weights[i];
-                ++idx;
-            }
+	relu(z) {
+		return Math.max(0, z);
+	}
 
-            activation += 1;    // bias to get the car moving, also causes steering bias
-            output.push(this.sigmoid(activation, 1));
-            idx = 0;
-        }
-        
-        return output;
-    }
+	leakyrelu(z) {
+		return Math.max(z * .1, z);
+	}
 
-    setWeights(weights, neuron_cnt, input_cnt) {
-        var idx = 0;
-        this.input_cnt = input_cnt;
-        this.neuron_cnt = neuron_cnt;
-        this.neurons = [];
-        
-        for (var n = 0; n < neuron_cnt; ++n) {
-            this.neurons[n].weights = [];
-            for (var i = 0; i < this.input_cnt; ++i) {
-                this.neurons[n].weights[i] = weights[idx];
-                ++idx;
-            }
-        }
-    }
+	sigmoid(z) {
+		return 1 / (1 + Math.exp(-z));
+	}
 
-    getWeights() {
-        var weights = [];
-        for (const n in this.neurons)
-            for (const w in this.neurons[n].weights)
-                weights.push(neurons[n].weights[w]);
+	forward(input) {
+		if(input.length != this.inputs) {
+			console.log("input array length doesn't match the number of inputs expected by the layer" + id)
+			return input;
+		}
 
-        return weights;
-    }
+		var output = [];
 
-    setNeurons(input_cnt, neuron_cnt, neurons) {
-        this.input_cnt = input_cnt;
-        this.neuron_cnt = neuron_cnt;
-        this.neurons = neurons;
-    }
+		for (const n in this.neurons) {
+			const z = this.neurons[n].forward(input);
 
-    LoadLayer(input) {
-        this.neuron_cnt = input.length;
-        this.neurons = input;
-    }
+			output.push(this.activation(z));
+		}
+
+		return output;
+	}
 }
 
 
+class Neuron {
+	constructor(init, weights, bias) {
+		this.weights = [];
+		this.bias = 0;
 
-class NCell {
-    constructor() {
-        this.input_cnt = null;
-        this.weights = [];
-    }
+		if (init) {
+			for (var w = 0; w < weights; w++)
+				this.weights.push(2 * Math.random() - 1);
+		}
+		else {
+			this.weights = weights;
+			this.bias = bias;
+		}
+	}
 
-    init(input_cnt, weights) {
-        this.input_cnt = input_cnt;
-        this.weights = weights;
-    }
+	forward(input) {
+		if(input.length != this.weights.length) {
+			console.log(input.length + " != " + this.weights.length)
+			console.log("input array length doesn't match the number of weights expected by the neuron");
+			return null;
+		}
 
-    populate(input_cnt) {
-        this.input_cnt = input_cnt;
+		var z = 0;
+		for (const i in input)
+			z += this.weights[i] * input[i];
 
-        for (var i = 0; i < input_cnt; ++i)
-            this.weights.push(Math.random()-Math.random());
-
-        this.weights.push(Math.random()-Math.random());
-    }
+		return z + this.bias;
+	}
 }

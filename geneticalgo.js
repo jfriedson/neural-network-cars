@@ -1,263 +1,252 @@
+class Genome {
+	constructor() {
+		this.fitness = 0;
+		this.net = null;
+	}
+}
+
 class GenAlgo {
-    constructor() {
-        this.current_genome = -1;
-        this.population_cnt = 0;
-        this.genomeid = 0;
-        this.generation = 1;
-        this.genome_weights_cnt = null;
-        this.population = [];
-        this.crossover_splits = [];
-    }
+	constructor(pop_cnt, inputs, hidden_layers, hidden_neurons, outputs) {
+		this.population_cnt = pop_cnt;
+		this.generation = 1;
+		this.population = null;
 
-    GetBestCases(champion_cnt) {
-        var run_cnt = 0,
-            output = [];
+		this.inputs = inputs;
+		this.hidden_layers = hidden_layers;
+		this.hidden_neurons = hidden_neurons;
+		this.outputs = outputs;
+	}
 
-        while (output.length < champion_cnt) {
-            if (run_cnt == champion_cnt)
-                break;
+	GenerateNewPopulation() {
+		this.population = [];
 
-            ++run_cnt;
+		for(var i = 0; i < this.population_cnt; ++i) {
+			var genome = new Genome();
+			genome.fitness = 0;
+			genome.net = new NNet(true, this.inputs, this.hidden_layers, this.outputs, this.hidden_neurons);
 
-            var best_fit = 0,
-                best_idx = -1;
+			this.population.push(genome);
+		}
+	}
 
-            for (var i = 0; i < this.population_cnt; ++i) {
-                if (this.population[i].fitness > best_fit) {
-                    var used = false;
+	infer(idx, input) {
+		if(idx >= this.population_cnt)
+			return null;
 
-                    for(var j = 0; j < output.length; ++j)
-                        if (this.population[i].id == output[j].id)
-                            used = true;
+		return this.population[idx].net.forward(input);
+	}
 
-                    if (!used) {
-                        best_idx = i;
-                        best_fit = this.population[best_idx].fitness;
-                    }
-                }
-            }
 
-            if (best_idx != -1) {
-                output.push(this.population[best_idx]);
+	GetBestGenomes(champion_cnt) {
+		var output = [];
 
-                if(best_fit < 100)
-                    champion_cnt = 2;
-            }
-            else {
-                break;
-            }
-        }
+		for (var g = 0; g < this.population_cnt; g++) {
+			if(this.population[g].fitness > 0) {
+				if(output.length < champion_cnt)
+					output.push(g);
+				else {
+					for(var b = 0; b < output.length; b++) {
+						if(this.population[g].fitness > this.population[output[b]].fitness) {
+							output.splice(b, 0, g);
+							output.pop();
 
-        return output;
-    }
-    CrossBreed(g1, g2) {
-        var weight_cnt = g1.weights.length;
+							break;
+						}
+					}
+				}
+			}
+		}
 
-        var b1 = new Genome();
-        b1.id = this.genomeid;
-        b1.weights = [];
-        ++this.genomeid;
+		return output;
+	}
 
-        var b2 = new Genome();
-        b2.id = this.genomeid;
-        b2.weights = [];
-        ++this.genomeid;
+	// randomly mix weights and biases of two networks
+	CrossBreed(g1, g2) {
+		var offspring1 = _.cloneDeep(g1);
+		offspring1.fitness = 0;
+		var offspring2 = _.cloneDeep(g2);
+		offspring2.fitness = 0;
 
-        for (var i = 0; i < weight_cnt; ++i) {
-            if(Math.random() > .5) {
-                b1.weights.push(g1.weights[i]);
-                b2.weights.push(g2.weights[i]);
-            }
-            else {
-                b1.weights.push(g2.weights[i]);
-                b2.weights.push(g1.weights[i]);
-            }
-        }
+		for (var hl = 0; hl < g1.net.hidden_layers.length; hl++) {
+			for (var n = 0; n < g1.net.hidden_layers[hl].neurons.length; n++) {
+				for (var w = 0; w < g1.net.hidden_layers[hl].neurons[n].weights.length; w++) {
+					if(Math.random() < m_mutation_chance) {
+						offspring1.net.hidden_layers[hl].neurons[n].weights[w] = g2.net.hidden_layers[hl].neurons[n].weights[w];
+						offspring2.net.hidden_layers[hl].neurons[n].weights[w] = g1.net.hidden_layers[hl].neurons[n].weights[w];
+					}
+				}
 
-        return [b1, b2];
-    }
-    Mutate(genome) {
-        var mutated = new Genome();
-        mutated = JSON.parse(JSON.stringify(genome));
-        for (const w in mutated.weights)
-        {
-            if (Math.random() < m_mutation_rate)
-                mutated.weights[w] += (Math.random() - Math.random()) * m_max_perbetuation;
-        }
+				if(Math.random() < m_mutation_chance) {
+					offspring1.net.hidden_layers[hl].neurons[n].bias = g2.net.hidden_layers[hl].neurons[n].bias;
+					offspring2.net.hidden_layers[hl].neurons[n].bias = g1.net.hidden_layers[hl].neurons[n].bias;
+				}
+			}
+		}
 
-        genome.id = this.genomeid;
-        ++this.genomeid;
-        
-        return mutated;
-    }
-    CreateNewGenome(weight_cnt) {
-        var genome = new Genome();
-        genome.id = this.genomeid;
-        genome.fitness = 0;
-        genome.weights = [];
+		for (var n = 0; n < g1.net.output_layer.neurons.length; n++) {
+			for (var w = 0; w < g1.net.output_layer.neurons[n].weights.length; w++) {
+				if(Math.random() < m_mutation_chance) {
+					offspring1.net.output_layer.neurons[n].weights[w] = g2.net.output_layer.neurons[n].weights[w];
+					offspring2.net.output_layer.neurons[n].weights[w] = g1.net.output_layer.neurons[n].weights[w];
+				}
+			}
 
-        for(var w = 0; w < weight_cnt; ++w)
-            genome.weights[w] = Math.random() - Math.random();
+			if(Math.random() < m_mutation_chance) {
+				offspring1.net.output_layer.neurons[n].bias = g2.net.output_layer.neurons[n].bias;
+				offspring2.net.output_layer.neurons[n].bias = g1.net.output_layer.neurons[n].bias;
+			}
+		}
 
-        ++this.genomeid;
+		return [offspring1, offspring2];
+	}
 
-        return genome;
-    }
 
-    GetNextGenome() {
-        ++this.current_genome;
-        if (this.current_genome >= this.population.length)
-            return null;
+	// slightly adjust the weights and biases of a network
+	Mutate(genome) {
+		var mutated = _.cloneDeep(genome);  // lodash deep clone
+		mutated.fitness = 0;
 
-        return this.population[this.current_genome];
-    }
-    GetBestGenome() {
-        var best_genome = -1;
-        var fitness = 0;
-        for (g in this.population) {
-            if (this.population[g].fitness > fitness) {
-                fitness = this.population[g].fitness;
-                best_genome = g;
-            }
-        }
+		for (var hl = 0; hl < mutated.net.hidden_layers.length; hl++) {
+			for (var n = 0; n < mutated.net.hidden_layers[hl].neurons.length; n++) {
+				for (var w = 0; w < mutated.net.hidden_layers[hl].neurons[n].weights.length; w++) {
+					if (Math.random() < m_mutation_chance)
+						mutated.net.hidden_layers[hl].neurons[n].weights[w] += (2 * Math.random() - 1) * m_learning_rate;
+				}
 
-        return this.population[best_genome];
-    }
-    GetWorstGenome() {
-        var worst_genome = -1;
-        var fitness = 1000000;
-        for (g in this.population) {
-            if (this.population[g].fitness < fitness) {
-                fitness = this.population[g].fitness;
-                worst_genome = g;
-            }
-        }
+				if(Math.random() < m_mutation_chance)
+					mutated.net.hidden_layers[hl].neurons[n].bias += (2 * Math.random() - 1) * m_learning_rate;
+			}
+		}
 
-        return this.population[worst_genome];
-    }
-    GetGenome(idx) {
-        if (idx >= this.population_cnt)
-            return null;
+		for (var n = 0; n < mutated.net.output_layer.neurons.length; n++) {
+			for (var w = 0; w < mutated.net.output_layer.neurons[n].weights.length; w++) {
+				if (Math.random() < m_mutation_chance)
+					mutated.net.output_layer.neurons[n].weights[w] += (2 * Math.random() - 1) * m_learning_rate;
+			}
 
-        return this.population[idx];
-    }
+			if(Math.random() < m_mutation_chance)
+				mutated.net.output_layer.neurons[n].bias += (2 * Math.random() - 1) * m_learning_rate;
+		}
 
-    GetCurrentGenomeIndex() {
-        return this.current_genome;
-    }
-    GetCurrentGenomeID() {
-        return this.population[this.current_genome].id;
-    }
-    GetCurrentGeneration() {
-        return this.generation;
-    }
-    GetTotalPopulation() {
-        return this.population_cnt;
-    }
+		return mutated;
+	}
 
-    GenerateNewPopulation(pop_cnt, inputs, hidden_layers, hidden_neurons, outputs){
-        var gen = 1;
-        this.population = [];
-        this.current_genome = -1;
-        this.population_cnt = pop_cnt;
-        this.population = [];
-        var weight_cnt = inputs * hidden_neurons + hidden_layers * hidden_neurons**2 + hidden_neurons * outputs;
+	CreateNewGenome() {
+		var genome = new Genome();
+		genome.fitness = 0;
+		genome.net = new NNet(true, this.inputs, this.hidden_layers, this.outputs, this.hidden_neurons);
 
-        for(var i = 0; i < this.population_cnt; ++i) {
-            var genome = new Genome();
-            genome.id = this.genomeid;
-            genome.fitness = 0;
-            genome.weights = [];
-            for (var j = 0; j < weight_cnt; ++j)
-                genome.weights[j] = Math.random() - Math.random();
-            ++this.genomeid;
-            this.population[i] = genome;
-        }
-    }
-    BreedPopulation() {
-        var children = [];
+		return genome;
+	}
 
-        // Keep best
-        var best_genomes = this.GetBestCases(m_champions);
-        if(best_genomes.length > 0) {
-            children.push(best_genomes[0]);
-            if(best_genomes.length > 1)
-                children.push(best_genomes[1]);
-            if(best_genomes.length > 2)
-                children.push(best_genomes[2]);
+	GetCurrentGeneration() {
+		return this.generation;
+	}
+	GetTotalPopulation() {
+		return this.population_cnt;
+	}
 
-            var b = null;
-            for(var i = 0; i < best_genomes.length; ++i) {
-                for(var j = 0; j < best_genomes.length; ++j) {
-                    if(i == j) {
-                        b = this.Mutate(best_genomes[i]);
-                        children.push(b);
-                    }
-                    else {
-                        b = this.CrossBreed(best_genomes[i], best_genomes[j]);
+	BreedPopulation() {
+		var new_population = [];
 
-                        b[0] = this.Mutate(b[0]);
-                        b[1] = this.Mutate(b[1]);
-                        children.push(b[0]);
-                        children.push(b[1]);
-                    }
-                }
-            }
-        }
+		var best_genomes = this.GetBestGenomes(m_champions);
 
-        var remaining = this.population_cnt - children.length;
+		// if there are no champions, create a new population
+		if(best_genomes.length == 0) {
+			this.GenerateNewPopulation();
+			++this.generation;
+			return;
+		}
 
-        if(best_genomes.length == 0 || this.generation < 10) {
-            for (var i = 0; i < remaining; ++i) {
-                children.push(this.CreateNewGenome(this.population[0].weights.length));
-            }
-        }
-        else if(this.generation % 3 == 0) {
-            while(remaining > 0) {
-                for (var i = 0; i < best_genomes.length; ++i) {
-                    b = this.CrossBreed(best_genomes[i], this.CreateNewGenome(this.population[0].weights.length));
+		// otherwise, retain champions
+		for (const g in best_genomes)
+			new_population.push(this.population[best_genomes[g]]);
 
-                    b[0] = this.Mutate(b[0]);
-                    b[1] = this.Mutate(b[1]);
-                    children.push(b[0]);
-                    children.push(b[1]);
-                    remaining -= 2;
-                }
-            }
-        }
-        else if(this.generation % 3 == 1) {
-            while(remaining > 0) {
-                for (var i = 0; i < best_genomes.length; ++i) {
-                    b = this.CrossBreed(best_genomes[i], this.CreateNewGenome(this.population[0].weights.length));
+		// crossbreed and mutate champions
+		for(var i = 0; i < best_genomes.length; ++i) {
+			for(var j = 0; j < best_genomes.length; ++j) {
+				if(i == j) {
+					var mutated = this.Mutate(this.population[best_genomes[i]]);
+					new_population.push(mutated);
+				}
+				else {
+					var offspring = this.CrossBreed(this.population[best_genomes[i]], this.population[best_genomes[j]]);
 
-                    children.push(b[0]);
-                    children.push(b[1]);
-                    remaining -= 2;
-                }
-            }
-        }
-        else {
-            while(remaining > 0) {
-                for (var i = 0; i < best_genomes.length; ++i) {
-                    if(remaining > 0) {
-                        b = this.Mutate(best_genomes[i]);
-                        children.push(b);
-                        --remaining;
-                    }
-                }
-            }
-        }
+					offspring[0] = this.Mutate(offspring[0]);
+					offspring[1] = this.Mutate(offspring[1]);
 
-        this.population = children;
+					new_population.push(offspring[0]);
+					new_population.push(offspring[1]);
+				}
+			}
+		}
 
-        this.current_genome = -1;
-        ++this.generation;
-    }
+		// fill the remaining population with a genetic algo
+		var remaining = this.population_cnt - new_population.length;
 
-    SetGenomeFitness(idx, fitness) {
-        if (idx >= this.population.length)
-            return;
+		// crossbreed champions with a new genome and mutate offspring
+		if (this.generation % 4 == 0) {
+			while (remaining > 0)
+				for (var i = 0; i < best_genomes.length; ++i)
+					if (remaining > 0) {
+						var new_genome = this.CreateNewGenome();
 
-        this.population[idx].fitness = fitness;
-    }
+						var offspring = this.CrossBreed(this.population[best_genomes[i]], new_genome);
+
+						offspring[0] = this.Mutate(offspring[0]);
+						offspring[1] = this.Mutate(offspring[1]);
+
+						new_population.push(offspring[0]);
+						if(remaining > 1)
+							new_population.push(offspring[1]);
+
+						remaining -= 2;
+					}
+		}
+		// crossbreed champions with a new genome
+		else if (this.generation % 4 == 1) {
+			while (remaining > 0)
+				for (var i = 0; i < best_genomes.length; ++i)
+					if (remaining > 0) {
+						var new_genome = this.CreateNewGenome();
+
+						offspring = this.CrossBreed(this.population[best_genomes[i]], new_genome);
+
+						new_population.push(offspring[0]);
+						if(remaining > 1)
+							new_population.push(offspring[1]);
+
+						remaining -= 2;
+					}
+		}
+		// crossbreed champions and mutate offspring
+		else {
+			while(remaining > 0)
+				for (var i = 0; i < best_genomes.length; ++i)
+					for (var j = 0; j < best_genomes.length; ++j)
+						if (remaining > 0) {
+							offspring = this.CrossBreed(this.population[best_genomes[i]], this.population[best_genomes[j]]);
+
+							offspring[0] = this.Mutate(offspring[0]);
+							offspring[1] = this.Mutate(offspring[1]);
+
+							new_population.push(offspring[0]);
+							if(remaining > 1)
+								new_population.push(offspring[1]);
+
+							remaining -= 2;
+						}
+		}
+
+		this.population = new_population;
+
+		++this.generation;
+	}
+
+	SetGenomeFitness(idx, fitness) {
+		if (idx >= this.population.length)
+			return;
+
+		this.population[idx].fitness = fitness;
+	}
 }
