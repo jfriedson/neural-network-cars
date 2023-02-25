@@ -36,9 +36,10 @@ Click on the canvas to toggle between normal and hyper speed
 
 
 ## Features
-Scoreboard
-Toggleable p2.js world step rate to speed up training (by a lot)
-Save and load leading champion's neural network weights using ctrl+c and ctrl+v with the canvas in focus
+- Scoreboard
+- Toggleable world step rate to speed up training immensely
+- Save and load leading champion's neural network weights using ctrl+c and ctrl+v with the canvas in focus
+- Load a pre-trained network with an out-of-frame html button
 
 
 ## Javascript libraries
