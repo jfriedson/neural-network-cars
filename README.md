@@ -15,7 +15,7 @@ The network outputs are then denormalized and applied to the physical body of th
 
 
 ### Genetic Algorithms
-There are 3 different genetic algorithms which rotate in turn with the genome generation. They differ in how they introduce new genetics to the genome pool through the use of mutation and cross-breeding the networks. Two algorithms splice new, random neurons into the best performing networks, while the third cross-breeds and mutates only the champion networks.
+There are 3 different genetic algorithms which rotate in turn with the genome generation. They differ in how they introduce new genetics to the genome pool through the use of mutation and cross-breeding. Two algorithms splice new, random neurons into the best performing networks, while the third cross-breeds and mutates only the champion networks.
 
 
 ## How to create your own race track
