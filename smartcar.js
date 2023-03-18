@@ -1,22 +1,25 @@
 const SmartCarApp = class {
 	constructor() {
 		this.statTrackingVars = {
-			start_time : performance.now(),
-			sim_steps : 0,
+			start_time : performance.now(),		// used for printing length of time for new records
+			sim_steps : 0,						// number of world steps since page load
 
-			// these are used to adjust the learning rate
+			// best network achievements - used to adjust the learning rate
 			record_chkpts : 0,
 			record_chkpts_time : 0,
 			record_score : 0,
 			record_score_time : 0,
 
+			// used for tracking and printing simulation and frame rates
 			sim_times : [],
 			render_times : []
 		}
 
+		// world and render interval timers
 		this.sim_step_intv = null;
 		this.animate_intv = null;
 
+		// construct objects physical bodies and render objects
 		this.renderer = initRenderer();
 		this.phys_world = initPhysWorld();
 		this.track_data = initTrackData();
@@ -34,30 +37,32 @@ const SmartCarApp = class {
 		setResizeEvents(this);
 		setCopyLoadEvents(this);
 
-		this.resizeEvent(this);
+		canvasResize(this);
 
 		setStepIntv(this);
 		setAnimIntv(this);
 	}
 
-	simSpeedToggle() { toggleSimSpeed(this); }
+	// the below callback handlers forward event handling to global methods
+	// just for the sake of readability
+	toggleSimSpeedForwarder() { toggleSimSpeed(this); }
 
-	resizeEvent() { resize(this); }
-	orientationChangeEvent() { orientationChange(this); }
+	canvasResizeForwarder() { canvasResize(this); }
+	orientationChangeForwarder() { orientationChange(this); }
 	
-	saveNetEvent(e) { saveNet(e, this); }
-	loadNetEvent(e) { loadNet(e, this); }
-	loadPretrainedNetEvent(e) { loadPretrainedNet(e, this); }
+	saveNetForwarder(e) { saveNet(e, this); }
+	loadNetForwarder(e) { loadNet(e, this); }
+	loadPretrainedNetForwarder(e) { loadPretrainedNet(e, this); }
 
 	stepAnimation() { animate(this); }
-	stepPhysWorld(num_steps) { sim_step(num_steps, this); }
+	stepPhysWorld(num_steps) { simStep(num_steps, this); }
 }
 
 new SmartCarApp();
 
 
 
-// 12 inputs: 7 rays, car speed, steerings angle, gas throttle, front and rear brakes
+// 12 inputs: 7 rays, car speed, steerings angle, gas throttle, standard and emergency brakes
 // 4 outputs: steerings angle, gas throttle, standard brakes pressure, handbrake pressure
 // every car has a NN + score (# of chkpts, time between each chkpt)
 // the genetical algo does mutation+crossover of NNs based on score; reset cars
@@ -142,7 +147,7 @@ function resetCars(app) {
 	}
 }
 
-function sim_step(num_steps, app) {
+function simStep(num_steps, app) {
 	for(var s = 0; s < num_steps; ++s) {
 		const now = performance.now();
 		while (app.statTrackingVars.sim_times.length > 0 && app.statTrackingVars.sim_times[0] <= now - 1000)
@@ -395,6 +400,8 @@ function setAnimIntv(app) {
 }
 
 
+// on page load and resize events, used to immediately draw something to the screen
+// in order to eliminate empty screen space
 function renderUpdate(app) {
 	animate(app);
 	
@@ -427,7 +434,7 @@ function renderUpdate(app) {
 }
 
 
-/***** Initialization and one-time generation code *****/
+/***** Initialize simulation objects and event callbacks *****/
 
 function initRenderer() {
 	PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.LINEAR;
@@ -515,8 +522,8 @@ function initScoreboard(renderer) {
 }
 
 function initSpeedToggle(app) {
-	app.renderer.renderer.view.addEventListener('mousedown', app.simSpeedToggle.bind(app));
-	app.renderer.renderer.view.addEventListener('touchstart', app.simSpeedToggle.bind(app));
+	app.renderer.renderer.view.addEventListener('mousedown', app.toggleSimSpeedForwarder.bind(app));
+	app.renderer.renderer.view.addEventListener('touchstart', app.toggleSimSpeedForwarder.bind(app));
 }
 
 function toggleSimSpeed(app) {
@@ -528,7 +535,7 @@ function toggleSimSpeed(app) {
 		m_sim_intv_fps = 60;
 		m_render_fps = 30;
 	}
-m_sim_world_fps
+	
 	console.log("sim fps: " + m_sim_intv_fps)
 	console.log("render fps: " + m_render_fps);
 
@@ -687,6 +694,8 @@ function generateCar(car, track_data, idx, phys_world, renderer) {
 
 
 /***** event callback handlers *****/
+
+// scroll wheel - zoom camera in and out
 function setMouseZoomEvent(app) {
 	app.renderer.renderer.view.addEventListener('wheel', function(event) {
 		event.preventDefault();
@@ -697,18 +706,18 @@ function setMouseZoomEvent(app) {
 		} else
 			zoom += 1;
 
-		resize(app);
+		canvasResize(app);
 	});
 }
 
 
-// canvas resizing
+// canvas resizing handler
 function setResizeEvents(app) {
-	window.addEventListener('resize', app.resizeEvent.bind(app));
-	window.addEventListener('orientationchange', app.orientationChangeEvent.bind(app));
+	window.addEventListener('resize', app.canvasResizeForwarder.bind(app));
+	window.addEventListener('orientationchange', app.orientationChangeForwarder.bind(app));
 }
 
-function resize(app) {
+function canvasResize(app) {
 	var w = window.innerWidth;
 	var h = window.innerHeight;
 
@@ -735,9 +744,9 @@ function orientationChange(app) {
 
 // save and load pretrained network
 function setCopyLoadEvents(app) {
-	window.addEventListener("copy", app.saveNetEvent.bind(app));
-	window.addEventListener("paste", app.loadNetEvent.bind(app));
-	parent.document.getElementById("pretrained").addEventListener("click", app.loadPretrainedNetEvent.bind(app));
+	window.addEventListener("copy", app.saveNetForwarder.bind(app));
+	window.addEventListener("paste", app.loadNetForwarder.bind(app));
+	parent.document.getElementById("pretrained").addEventListener("click", app.loadPretrainedNetForwarder.bind(app));
 }
 
 function saveNet(e, app) {
