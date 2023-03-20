@@ -1,6 +1,8 @@
 # Smart Car AI - Neural Networks Trained by a Genetic Algorithm
 This demo is meant to demonstrate the process of breeding a neural network-driven car through the use of genetical algorithms with the goal of having the cars navigate a race track as quickly as possible.
 
+You can see the live demo at my website: https://JoshFriedson.com/projects/smart_car
+
 
 ## Architecture
 ### Neural Network
