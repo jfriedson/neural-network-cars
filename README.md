@@ -51,8 +51,9 @@ Lodash - deep cloning ability for genetic algorithm functionality
 
 
 ## To do
+Fix delayed records in scoreboard\
 Finish implementing neural network graph render\
-Find fix for intervals/fps counter in firefox
+Find fix for intervals/fps counter in firefox\
 
 ---
 
