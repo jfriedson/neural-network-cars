@@ -7,7 +7,7 @@ You can see the live demo at my website: https://JoshFriedson.com/projects/smart
 ## Architecture
 ### Neural Network
 The neural networks driving each car have the following attributes
-- 12 inputs: 7 forward and side-facing distance sensors and the car's speed, steerings angle, gas throttle, and standard and emergency brakes
+- 13 inputs: 7 forward and side-facing distance sensors and the car's speed, angular velocity, steerings angle, gas throttle, and standard and emergency brakes
 - 1 hidden layer of 10 neurons, found to be a good balance of training time and function complexity for this simple problem
 - 4 outputs: steerings angle, gas throttle, and standard and emergency brakes
 
@@ -51,7 +51,7 @@ Lodash - deep cloning ability for genetic algorithm functionality
 
 
 ## To do
-Fix delayed records in scoreboard\
+Use webworkers for computationally intensive loops acting on cars\
 Finish implementing neural network graph render\
 Find fix for intervals/fps counter in firefox\
 

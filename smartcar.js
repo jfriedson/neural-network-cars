@@ -54,7 +54,7 @@ const SmartCarApp = class {
 	loadNetForwarder(e) { loadNet(e, this); }
 	loadPretrainedNetForwarder(e) { loadPretrainedNet(e, this); }
 
-	stepAnimation() { animate(this); }
+	stepAnimation() { animate(this, false); }
 	stepPhysWorld(num_steps) { simStep(num_steps, this); }
 }
 

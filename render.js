@@ -6,7 +6,7 @@ function setAnimIntv(app) {
 	app.animate_intv = setInterval(app.stepAnimation.bind(app), m_render_delay);
 }
 
-function animate(app) {
+function animate(app, recenter_camera) {
 	const now = performance.now();
 	while (app.statTrackingVars.render_times.length > 0 && app.statTrackingVars.render_times[0] <= now - 1000)
 		app.statTrackingVars.render_times.shift();
@@ -40,7 +40,7 @@ function animate(app) {
 		}
 	}
 
-	// scoreboard
+	// for camera and UX
 	var best_score = 0,
 		best_car = 0;
 	for (const c in app.cars) {
@@ -50,10 +50,12 @@ function animate(app) {
 		}
 	}
 
-	// scoreboard and graph positioning
+
+	// camera positioning
 	const car_pos_x = app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.x * app.cars[best_car].graphics.position.x,
-		 car_pos_y = app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.y * app.cars[best_car].graphics.position.y;
-	if (Math.abs(car_pos_x - app.renderer.stage.position.x) + Math.abs(car_pos_y - app.renderer.stage.position.y) > 150) {
+		  car_pos_y = app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.y * app.cars[best_car].graphics.position.y;
+	const cam_dist = Math.abs(car_pos_x - app.renderer.stage.position.x) + Math.abs(car_pos_y - app.renderer.stage.position.y);
+	if (!recenter_camera && cam_dist > 150) {
 		app.renderer.stage.position.x += (car_pos_x - app.renderer.stage.position.x)/(m_render_fps/3);
 		app.renderer.stage.position.y += (car_pos_y - app.renderer.stage.position.y)/(m_render_fps/3);
 	}
@@ -62,10 +64,14 @@ function animate(app) {
 		app.renderer.stage.position.y = car_pos_y;
 	}
 
+	// scoreboard positioning
 	app.scoreboard.x =  (app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.x)/app.renderer.stage.scale.x - 780/zoom;
 	app.scoreboard.y = (app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.y)/app.renderer.stage.scale.y + 430/zoom;
 	app.scoreboard.scale.x = 1/zoom;
 	app.scoreboard.scale.y = -1/zoom;
+
+	// neural net graph
+	renderGraph(app, best_car);
 
 	app.graph.text.x =  (app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.x)/app.renderer.stage.scale.x + 240/zoom;
 	app.graph.text.y = (app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.y)/app.renderer.stage.scale.y + 430/zoom;
@@ -77,7 +83,18 @@ function animate(app) {
 	app.graph.graphics.scale.x = 1/zoom;
 	app.graph.graphics.scale.y = -1/zoom;
 
+	app.renderer.renderer.render(app.renderer.stage);
+}
 
+
+// on page load and resize events, used to immediately draw something to the screen
+// in order to eliminate empty screen space
+function renderUpdate(app) {
+	animate(app, true);
+}
+
+
+function renderGraph(app, best_car) {
 	// neural network graph - draw best performing car neural network activations
 	app.graph.graphics.clear();
 
@@ -88,6 +105,7 @@ function animate(app) {
 
 	var input = [];
 	input.push(Math.sqrt(app.cars[best_car].body.velocity[0]**2 + app.cars[best_car].body.velocity[1]**2) / 50);
+	input.push(Activations.sigmoid(app.cars[best_car].body.angularVelocity));  // angular velocity
 	for(var i = 0; i < 4; ++i)
 		input.push(app.cars[best_car].prevOutputs[i]);
 	for(var i = 0; i < 7; ++i) {
@@ -113,40 +131,4 @@ function animate(app) {
 	// 	graph.drawCircle(5, 15 + i * 30, 10);
 	// 	graph.endFill();
 	// }
-
-	app.renderer.renderer.render(app.renderer.stage);
-}
-
-
-// on page load and resize events, used to immediately draw something to the screen
-// in order to eliminate empty screen space
-function renderUpdate(app) {
-	animate(app);
-	
-	var best_score = 0,
-		best_car = 0;
-	for (const s in app.cars) {
-		if (app.cars[s].score.score > best_score && app.cars[s].score.racing) {
-			best_score = app.cars[s].score.score;
-			best_car = s;
-		}
-	}
-
-	app.renderer.stage.position.x =  app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.x * app.cars[best_car].graphics.position.x;
-	app.renderer.stage.position.y = app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.y * app.cars[best_car].graphics.position.y;
-
-	app.scoreboard.x = app.cars[best_car].graphics.position.x - 780/zoom;
-	app.scoreboard.y = app.cars[best_car].graphics.position.y + 430/zoom;
-	app.scoreboard.scale.x = 1/zoom;
-	app.scoreboard.scale.y = -1/zoom;
-
-	app.graph.text.x =  (app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.x)/app.renderer.stage.scale.x + 240/zoom;
-	app.graph.text.y = (app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.y)/app.renderer.stage.scale.y + 430/zoom;
-	app.graph.text.scale.x = 1/zoom;
-	app.graph.text.scale.y = -1/zoom;
-
-	app.graph.graphics.x =  (app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.x)/app.renderer.stage.scale.x + 240/zoom;
-	app.graph.graphics.y = (app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.y)/app.renderer.stage.scale.y + 390/zoom;
-	app.graph.graphics.scale.x = 1/zoom;
-	app.graph.graphics.scale.y = -1/zoom;
 }

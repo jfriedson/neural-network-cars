@@ -23,7 +23,7 @@
 		<!-- major modifiers for simulation -->
 		<script type="text/javascript">
 			// neural network settings
-			const net_input_cnt = 12,
+			const net_input_cnt = 13,
 				  net_output_cnt = 4;
 
 			const m_hidden_layers = 1,
@@ -56,15 +56,16 @@
 				m_sim_step = 1000/m_sim_world_fps/1000;
 		</script>
 		
-		<script type="text/javascript" src="neuralnet.js"></script>
-		<script type="text/javascript" src="geneticalgo.js"></script>
+		<script type="text/javascript" src="neural_net.js"></script>
+		<script type="text/javascript" src="genetic_algo.js"></script>
 
 		<script type="text/javascript" src="initiative.js"></script>
 		<script type="text/javascript" src="generative.js"></script>
-		<script type="text/javascript" src="callback_handlers.js"></script>
 
-		<script type="text/javascript" src="simulation.js"></script>
-		<script type="text/javascript" src="animation.js"></script>
+		<script type="text/javascript" src="simulate.js"></script>
+		<script type="text/javascript" src="render.js"></script>
+		
+		<script type="text/javascript" src="callback_handlers.js"></script>
 
 		<script type="text/javascript" src="smartcar.js"></script>
 	</body>

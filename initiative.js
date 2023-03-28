@@ -43,7 +43,6 @@ function initWorldCollisionEvent(app) {
 					app.cars[c].score.score += (app.cars[c].body.position[0] > app.track.chkpts[app.cars[c].score.chkpts-1].position[0] ? 1 : -1) * Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2);
 
 				app.cars[c].score.racing = false;
-				app.gen_algo.SetGenomeFitness(c, app.cars[c].score.score);
 
 				app.cars[c].frontWheel.steerValue = 1.57;
 				app.cars[c].body.angularVelocity = (2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1] / 10;

@@ -4,6 +4,8 @@
 // the genetical algo does mutation+crossover of NNs based on score; reset cars
 function NetForward(idx, input, cars, gen_algo) {
 	const output = gen_algo.infer(idx, input);
+	output[2] = Math.max(0, output[2]);
+	output[3] = Math.max(0, output[3]);
 
 	cars[idx].prevOutputs = output;
 
@@ -69,7 +71,6 @@ function simStep(num_steps, app) {
 					}
 
 					app.cars[c].score.racing = false;
-					app.gen_algo.SetGenomeFitness(c, app.cars[c].score.score);
 
 					app.cars[c].body.angularVelocity = (2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1] / 20;
 				}
@@ -78,6 +79,8 @@ function simStep(num_steps, app) {
 			if(app.cars[c].score.racing) {
 				var input = [];
 				input.push( Math.sqrt(app.cars[c].body.velocity[0]**2 + app.cars[c].body.velocity[1]**2) / 50 );  // car speed
+				input.push(Activations.sigmoid(app.cars[c].body.angularVelocity));  // angular velocity
+
 				input.push(app.cars[c].prevOutputs[0]);  // steering angle
 				input.push(app.cars[c].prevOutputs[1]);  // gas throttle
 				input.push(app.cars[c].prevOutputs[2]);  // standard brake
@@ -115,13 +118,15 @@ function simStep(num_steps, app) {
 			var best_score = 0,
 				best_chkpt = 0;
 			for (c in app.cars) {
+				app.gen_algo.SetGenomeFitness(c, app.cars[c].score.score);
+				
 				if(app.cars[c].score.score > best_score) {
 					best_score = app.cars[c].score.score;
 					best_chkpt = app.cars[c].score.chkpts;
 				}
-
-				resetCars(app);
 			}
+			
+			resetCars(app);
 
 			// run genetic algorithm
 			m_mutation_chance = Math.min(Math.max(.05, m_mutation_chance - (app.gen_algo.generation/10000) + (app.statTrackingVars.record_score_time/10000) + (app.statTrackingVars.record_chkpts_time/10000)), .3)

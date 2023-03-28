@@ -100,22 +100,6 @@ class NNLayer {
 		}
 	}
 
-	linear(z) {
-		return z;
-	}
-
-	relu(z) {
-		return Math.max(0, z);
-	}
-
-	leakyrelu(z) {
-		return Math.max(z * .1, z);
-	}
-
-	sigmoid(z) {
-		return 1 / (1 + Math.exp(-z));
-	}
-
 	forward(input) {
 		if(input.length != this.inputs) {
 			console.log("input array length doesn't match the number of inputs expected by the layer" + id)
