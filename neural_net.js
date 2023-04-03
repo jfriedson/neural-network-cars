@@ -31,13 +31,11 @@ class NNet {
 		var outputs = [];
 
 		for (const hl in this.hidden_layers) {
-			if(hl > 0)
-				input = outputs;
-
 			outputs = this.hidden_layers[hl].forward(input);
+
+			input = outputs;
 		}
 
-		input = outputs;
 		outputs = this.output_layer.forward(input);
 
 		return outputs;

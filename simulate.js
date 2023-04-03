@@ -2,16 +2,13 @@
 // 4 outputs: steerings angle, gas throttle, standard brakes pressure, handbrake pressure
 // every car has a NN + score (# of chkpts, time between each chkpt)
 // the genetical algo does mutation+crossover of NNs based on score; reset cars
-function NetForward(idx, input, cars, gen_algo) {
+function forwardPropCar(idx, input, cars, gen_algo) {
 	const output = gen_algo.infer(idx, input);
-	output[2] = Math.max(0, output[2]);
-	output[3] = Math.max(0, output[3]);
 
 	cars[idx].prevOutputs = output;
 
 	cars[idx].frontWheel.steerValue = ((2*car_max_steer) * output[0] - car_max_steer);
 	cars[idx].backWheel.engineForce = ((car_max_forward_accel + car_max_reverse_accel) * output[1] - car_max_reverse_accel);
-
 	cars[idx].frontWheel.setBrakeForce(car_max_std_brake * output[2]);
 	cars[idx].backWheel.setBrakeForce((car_max_std_brake * .8) * output[2] + (car_max_e_brake * output[3]));
 }
@@ -58,22 +55,30 @@ function simStep(num_steps, app) {
 		var racing = 0;
 		for(const c in app.cars) {
 			// check if car reached the checkpoint time limit
-			if((app.statTrackingVars.sim_steps - app.cars[c].score.times[app.cars[c].score.times.length-1])/m_sim_world_fps >= time_limit) {
-				if(app.cars[c].score.racing) {
-					if(score_by_dist) {
-						if(1 <= app.cars[c].score.chkpts)
-						app.cars[c].score.score += (app.cars[c].body.position[0] > app.track.chkpts[app.cars[c].score.chkpts-1].position[0] ? 1 : -1) * Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2);
-						else {
-							sc = 40 - Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[0].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[0].position[1])**2);
-							if(sc > 0)
-								app.cars[c].score.score += sc;
+			if (app.cars[c].score.racing &&
+				(app.statTrackingVars.sim_steps - app.cars[c].score.times[app.cars[c].score.times.length-1])/m_sim_world_fps >= time_limit)
+			{
+				if (score_by_dist) {
+					if (app.cars[c].score.chkpts >= 1) {
+						// reward - distance from previous checkpoint
+						app.cars[c].score.score += Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2);
+						
+						// penalize - distance to next checkpoint
+						if (app.cars[c].score.chkpts < app.track.chkpts.length) {
+							app.cars[c].score.score -= Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts].position[1])**2);
 						}
 					}
-
-					app.cars[c].score.racing = false;
-
-					app.cars[c].body.angularVelocity = (2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1] / 20;
+					else {
+						// penalize - distance to first checkpoint
+						app.cars[c].score.score -= Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[0].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[0].position[1])**2);
+					}
 				}
+
+				app.cars[c].score.racing = false;
+
+				// perpendicular wheels & random angular velocity for comedic effect
+				app.cars[c].frontWheel.steerValue = 1.57;
+				app.cars[c].body.angularVelocity = (2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1] / 20;
 			}
 
 			if(app.cars[c].score.racing) {
@@ -101,7 +106,7 @@ function simStep(num_steps, app) {
 					input.push(ray_dist);
 				}
 
-				NetForward(c, input, app.cars, app.gen_algo);
+				forwardPropCar(c, input, app.cars, app.gen_algo);
 				++racing;
 			}
 			else {

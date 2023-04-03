@@ -94,14 +94,10 @@ function renderUpdate(app) {
 }
 
 
+// neural network graph - draw best performing car neural network activations
 function renderGraph(app, best_car) {
-	// neural network graph - draw best performing car neural network activations
 	app.graph.graphics.clear();
 
-	// draw lines between neurons
-	// graph.lineStyle(.25, 0xff0000, 1, .5, false);
-	// graph.moveTo(cars[c].body.position[0], cars[c].body.position[1]);
-	// graph.lineTo(hitPoint[0], hitPoint[1]);
 
 	var input = [];
 	input.push(Math.sqrt(app.cars[best_car].body.velocity[0]**2 + app.cars[best_car].body.velocity[1]**2) / 50);
@@ -114,21 +110,81 @@ function renderGraph(app, best_car) {
 	}
 
 
+	const net = app.gen_algo.population[best_car].net;
+
+	const x_offset = 30;
+	const x_spacing = 200;
+	const y_offset = 15;
+	const y_spacing = 30;
+
+	// draw weight activations between neurons
+	var layer_in = input;
+	for(const l in net.hidden_layers) {
+		var layer_out = new Array(net.hidden_layers[l].neurons.length);
+
+		for(const n in net.hidden_layers[l].neurons) {
+			layer_out[n] = 0;
+			
+			for(const w in net.hidden_layers[l].neurons[n].weights) {
+				const conn = layer_in[w] * net.hidden_layers[l].neurons[n].weights[w];
+				layer_out[n] += conn;
+
+				const gray = 0xff * Math.min(Math.max(0, conn), 1);
+				app.graph.graphics.lineStyle(2, (gray << 24) + (gray << 16) + gray, 1, .5, true);
+				app.graph.graphics.moveTo(x_offset + l * x_spacing, y_offset + w * y_spacing);
+				app.graph.graphics.lineTo(x_offset + (l + 1) * x_spacing, y_offset + n * y_spacing);
+			}
+
+			const z = net.hidden_layers[l].activation;
+			const b = net.hidden_layers[l].neurons[n].bias;
+			layer_out[n] = z(layer_out[n] + b);
+		}
+
+		layer_in = layer_out;
+	}
+
+	var output = Array(net.output_layer.neurons);
+	for(const n in net.output_layer.neurons) {
+		output[n] = 0;
+
+		for(const w in net.output_layer.neurons[n].weights) {
+			const conn = layer_in[w] * net.output_layer.neurons[n].weights[w];
+			output[n] += conn;
+
+			const gray = 0xff * Math.min(Math.max(0, conn), 1);
+			app.graph.graphics.lineStyle(2, (gray << 24) + (gray << 16) + gray, 1, .5, true);
+			app.graph.graphics.moveTo(x_offset + net.hidden_layers.length * x_spacing, y_offset + w * y_spacing);
+			app.graph.graphics.lineTo(x_offset + (net.hidden_layers.length + 1) * x_spacing, y_offset + n * y_spacing);
+		}
+
+		const z = net.output_layer.activation;
+		const b = net.output_layer.neurons[n].bias;
+		output[n] = z(output[n] + b);
+	}
+
+
+	// input neurons
 	app.graph.graphics.lineStyle(0, 0, 0, .5, false);
-	for(const i in input) {
-		//graph.lineStyle(2, 0x000000, 1, .5, false);
-		const gray = 0xff * Math.min(Math.max(0, input[i]), 1);
+	for(const neuron in input) {
+		const gray = 0xff * Math.min(Math.max(0, input[neuron]), 1);
 		app.graph.graphics.beginFill((gray << 24) + (gray << 16) + gray, 1);
-		app.graph.graphics.drawCircle(5, 15 + i * 30, 10);
+		app.graph.graphics.drawCircle(x_offset, y_offset + neuron * y_spacing, 10);
 		app.graph.graphics.endFill();
 	}
 
-	const best_net = app.gen_algo.population[best_car].net;
-	// for(const hl in m_hidden_layers) {
-	// 	//graph.lineStyle(2, 0x000000, 1, .5, false);
-	// 	const gray = 0xff * input[i];
-	// 	graph.beginFill((gray << 24) + (gray << 16) + gray, 1);
-	// 	graph.drawCircle(5, 15 + i * 30, 10);
-	// 	graph.endFill();
-	// }
+	// draw last hidden layer neurons
+	for(const neuron in layer_in) {
+		const gray = 0xff * Math.min(Math.max(0, layer_in[neuron]), 1);
+		app.graph.graphics.beginFill((gray << 24) + (gray << 16) + gray, 1);
+		app.graph.graphics.drawCircle(x_offset + x_spacing, y_offset + neuron * y_spacing, 10);
+		app.graph.graphics.endFill();
+	}
+
+	for(const neuron in output) {
+		//graph.lineStyle(2, 0x000000, 1, .5, false);
+		const gray = 0xff * Math.min(Math.max(0, output[neuron]), 1);
+		app.graph.graphics.beginFill((gray << 24) + (gray << 16) + gray, 1);
+		app.graph.graphics.drawCircle(x_offset + 2 * x_spacing, y_offset + neuron * y_spacing, 10);
+		app.graph.graphics.endFill();
+	}
 }

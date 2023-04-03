@@ -32,21 +32,33 @@ function initWorldCollisionEvent(app) {
 			app.cars[c].score.times.push(app.statTrackingVars.sim_steps);
 			app.cars[c].score.score += 100;
 
-			// reward for time after for first 2 checkpoints and after 9th ckpt to improve turning
-			if (app.statTrackingVars.record_chkpts <= 2 || app.statTrackingVars.record_chkpts >= 8)
+			// reward for time during relatively straight sections of track to
+			// improve learning of tight turns
+			if ((app.statTrackingVars.record_chkpts <= 2 || app.statTrackingVars.record_chkpts >= 8) &&
+				(app.statTrackingVars.record_chkpts <= 20 || app.statTrackingVars.record_chkpts >= 40))
+			{
 				app.cars[c].score.score += time_limit - (app.cars[c].score.times[app.cars[c].score.times.length-1] - app.cars[c].score.times[app.cars[c].score.times.length-2])/m_sim_world_fps;
+			}
 		}
 		// wall
-		else {
-			if(!get_pt && app.cars[c].score.racing) {
-				if(score_by_dist  &&  1 <= app.cars[c].score.chkpts  &&  app.cars[c].score.chkpts <= 8)
-					app.cars[c].score.score += (app.cars[c].body.position[0] > app.track.chkpts[app.cars[c].score.chkpts-1].position[0] ? 1 : -1) * Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2);
+		else if(!get_pt && app.cars[c].score.racing) {
+			app.cars[c].score.score -= 10 * app.cars[c].score.chkpts;
 
-				app.cars[c].score.racing = false;
-
-				app.cars[c].frontWheel.steerValue = 1.57;
-				app.cars[c].body.angularVelocity = (2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1] / 10;
+			if (app.cars[c].score.chkpts >= 1) {
+				// reward - distance from previous checkpoint
+				app.cars[c].score.score += Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2);
+				
+				// penalize - distance to next checkpoint
+				if (app.cars[c].score.chkpts < app.track.chkpts.length) {
+					app.cars[c].score.score -= Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts].position[1])**2);
+				}
 			}
+
+			app.cars[c].score.racing = false;
+
+			// perpendicular wheels & random angular velocity for comedic effect
+			app.cars[c].frontWheel.steerValue = 1.57;
+			app.cars[c].body.angularVelocity = (2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1] / 10;
 		}
 	});
 }
@@ -106,7 +118,7 @@ function initCars(app) {
 }
 
 function initGraph(app) {
-	app.graph = {graphics : new PIXI.Graphics(), text : new PIXI.Text("best performing network activations (WIP)", {fontFamily : 'Arial', fontSize: 30, fill : 0xffffff, align : 'left'})};
+	app.graph = {graphics : new PIXI.Graphics(), text : new PIXI.Text("best performing network activations", {fontFamily : 'Arial', fontSize: 30, fill : 0xffffff, align : 'left'})};
 
 	app.renderer.stage.addChild(app.graph.graphics);
 	app.renderer.stage.addChild(app.graph.text);
