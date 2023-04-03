@@ -7,7 +7,7 @@ const SmartCarApp = class {
 			// best network achievements - used to adjust the learning rate
 			record_chkpts : 0,
 			record_chkpts_time : 0,
-			record_score : 0,
+			record_score : Number.MIN_SAFE_INTEGER,
 			record_score_time : 0,
 
 			// used for tracking and printing simulation and frame rates

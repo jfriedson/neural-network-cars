@@ -59,18 +59,14 @@ function simStep(num_steps, app) {
 				(app.statTrackingVars.sim_steps - app.cars[c].score.times[app.cars[c].score.times.length-1])/m_sim_world_fps >= time_limit)
 			{
 				if (score_by_dist) {
+					// reward - distance from previous checkpoint
 					if (app.cars[c].score.chkpts >= 1) {
-						// reward - distance from previous checkpoint
 						app.cars[c].score.score += Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2);
-						
-						// penalize - distance to next checkpoint
-						if (app.cars[c].score.chkpts < app.track.chkpts.length) {
-							app.cars[c].score.score -= Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts].position[1])**2);
-						}
 					}
-					else {
-						// penalize - distance to first checkpoint
-						app.cars[c].score.score -= Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[0].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[0].position[1])**2);
+
+					// penalize - distance to next checkpoint
+					if (app.cars[c].score.chkpts < app.track.chkpts.length) {
+						app.cars[c].score.score -= Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts].position[1])**2);
 					}
 				}
 
@@ -120,7 +116,7 @@ function simStep(num_steps, app) {
 		// if all cars in a failure condition, reset track and NNs
 		if(racing == 0) {
 			// get best score
-			var best_score = 0,
+			var best_score = Number.MIN_SAFE_INTEGER,
 				best_chkpt = 0;
 			for (c in app.cars) {
 				app.gen_algo.SetGenomeFitness(c, app.cars[c].score.score);
@@ -139,18 +135,21 @@ function simStep(num_steps, app) {
 			
 			app.gen_algo.BreedPopulation();
 
-			// update record keeping
+			// update checkpoint record
+			if(best_chkpt > app.statTrackingVars.record_chkpts) {
+				app.statTrackingVars.record_chkpts = best_chkpt;
+				app.statTrackingVars.record_chkpts_time = 0;
+			}
+			else {
+				app.statTrackingVars.record_chkpts_time++;
+			}
+			
+			// update checkpoint record
 			if(best_score > app.statTrackingVars.record_score) {
 				app.statTrackingVars.record_score = best_score;
 				app.statTrackingVars.record_score_time = 0;
 
-				if(best_chkpt > app.statTrackingVars.record_chkpts) {
-					app.statTrackingVars.record_chkpts = best_chkpt;
-					app.statTrackingVars.record_chkpts_time = 0;
-				}
-				else
-					app.statTrackingVars.record_chkpts_time++;
-
+				// log to console and scoreboard in the case of a new high score
 				var time_diff = performance.now() - app.statTrackingVars.start_time;
 				console.log("New record of " + app.statTrackingVars.record_score.toFixed(3) + " in gen " + (app.gen_algo.generation-1) + " at " + Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(Date.now()) + " after " + Math.floor(time_diff/1440000) + "h " + Math.floor(time_diff/60000)%60 + "m " + Math.floor(time_diff/1000)%60 + "s");
 				if (text.length == 11) {
@@ -164,7 +163,6 @@ function simStep(num_steps, app) {
 			}
 			else {
 				app.statTrackingVars.record_score_time++;
-				app.statTrackingVars.record_chkpts_time++;
 			}
 
 			//var text = scoreboard.text.split("\n");

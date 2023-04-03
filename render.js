@@ -41,10 +41,10 @@ function animate(app, recenter_camera) {
 	}
 
 	// for camera and UX
-	var best_score = 0,
+	var best_score = Number.MIN_SAFE_INTEGER,
 		best_car = 0;
 	for (const c in app.cars) {
-		if (app.cars[c].score.racing && app.cars[c].score.score > best_score) {
+		if (app.cars[c].score.racing && (app.cars[c].score.score > best_score)) {
 			best_score = app.cars[c].score.score;
 			best_car = c;
 		}
