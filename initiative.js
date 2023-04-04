@@ -34,8 +34,9 @@ function initWorldCollisionEvent(app) {
 
 			// reward for time during relatively straight sections of track to
 			// improve learning of tight turns
-			if ((app.cars[c].score.chkpts <= 2 || app.cars[c].score.chkpts >= 8) &&
-				(app.cars[c].score.chkpts <= 20 || app.cars[c].score.chkpts >= 40))
+			if (app.statTrackingVars.record_chkpts == app.track.chkpts.length ||
+					((app.cars[c].score.chkpts <= 2 || app.cars[c].score.chkpts >= 8) &&
+				 	(app.cars[c].score.chkpts <= 20 || app.cars[c].score.chkpts >= 40)))
 			{
 				app.cars[c].score.score += time_limit - (app.cars[c].score.times[app.cars[c].score.times.length-1] - app.cars[c].score.times[app.cars[c].score.times.length-2])/m_sim_world_fps;
 			}

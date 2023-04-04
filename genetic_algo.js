@@ -41,15 +41,18 @@ class GenAlgo {
 		var output = [];
 
 		for (var g = 0; g < this.population_cnt; g++) {
-			if(output.length < champion_cnt)
-				output.push(g);
-			else {
-				for(var b = 0; b < output.length; b++) {
-					if(this.population[g].fitness > this.population[output[b]].fitness) {
-						output.splice(b, 0, g);
-						output.pop();
+			if(this.population[g].fitness > 0) {
+				if(output.length < champion_cnt) {
+					output.push(g);
+				}
+				else {
+					for(var b = 0; b < output.length; b++) {
+						if(this.population[g].fitness > this.population[output[b]].fitness) {
+							output.splice(b, 0, g);
+							output.pop();
 
-						break;
+							break;
+						}
 					}
 				}
 			}

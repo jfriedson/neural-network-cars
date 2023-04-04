@@ -9,8 +9,8 @@ function forwardPropCar(idx, input, cars, gen_algo) {
 
 	cars[idx].frontWheel.steerValue = ((2*car_max_steer) * output[0] - car_max_steer);
 	cars[idx].backWheel.engineForce = ((car_max_forward_accel + car_max_reverse_accel) * output[1] - car_max_reverse_accel);
-	cars[idx].frontWheel.setBrakeForce(car_max_std_brake * output[2]);
-	cars[idx].backWheel.setBrakeForce((car_max_std_brake * .8) * output[2] + (car_max_e_brake * output[3]));
+	cars[idx].frontWheel.setBrakeForce(car_max_std_brake * .65 * output[2]);
+	cars[idx].backWheel.setBrakeForce((car_max_std_brake * .35) * output[2] + (car_max_e_brake * output[3]));
 }
 
 
@@ -62,11 +62,6 @@ function simStep(num_steps, app) {
 					// reward - distance from previous checkpoint
 					if (app.cars[c].score.chkpts >= 1) {
 						app.cars[c].score.score += Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2);
-					}
-
-					// penalize - distance to next checkpoint
-					if (app.cars[c].score.chkpts < app.track.chkpts.length) {
-						app.cars[c].score.score -= Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts].position[1])**2);
 					}
 				}
 
