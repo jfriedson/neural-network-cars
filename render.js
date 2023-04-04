@@ -52,12 +52,24 @@ function animate(app, recenter_camera) {
 
 
 	// camera positioning
+	var target_changed = false;
+	if(app.camera_target != best_car) {
+		app.camera_target = best_car;
+		app.camera_lerp_value = 0;
+		target_changed = true;
+	}
+
 	const car_pos_x = app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.x * app.cars[best_car].graphics.position.x,
 		  car_pos_y = app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.y * app.cars[best_car].graphics.position.y;
-	const cam_dist = Math.abs(car_pos_x - app.renderer.stage.position.x) + Math.abs(car_pos_y - app.renderer.stage.position.y);
-	if (!recenter_camera && cam_dist > 150) {
-		app.renderer.stage.position.x += (car_pos_x - app.renderer.stage.position.x)/(m_render_fps/3);
-		app.renderer.stage.position.y += (car_pos_y - app.renderer.stage.position.y)/(m_render_fps/3);
+
+	if (!recenter_camera && (target_changed || (app.camera_lerp_value < 1))) {
+		const cam_dist = Math.sqrt((car_pos_x - app.renderer.stage.position.x)**2 + (car_pos_y - app.renderer.stage.position.y)**2);
+
+		app.camera_lerp_value += 1/m_render_fps + cam_dist/1000000;
+		app.camera_lerp_value = Math.min(app.camera_lerp_value, 1);
+
+		app.renderer.stage.position.x = (1 - app.camera_lerp_value) * app.renderer.stage.position.x + app.camera_lerp_value * car_pos_x;
+		app.renderer.stage.position.y = (1 - app.camera_lerp_value) * app.renderer.stage.position.y + app.camera_lerp_value * car_pos_y;
 	}
 	else {
 		app.renderer.stage.position.x = car_pos_x;

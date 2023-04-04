@@ -74,6 +74,9 @@ function initRenderer(app) {
 	app.renderer.renderer.view.oncontextmenu = function (e) {
 		e.preventDefault();
 	};
+
+	app.camera_target = 0;
+	app.camera_lerp_alpha = 1;
 }
 
 function initPhysWorld(app) {
