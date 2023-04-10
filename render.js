@@ -8,13 +8,18 @@ function setAnimIntv(app) {
 
 function animate(app, recenter_camera) {
 	const now = performance.now();
+
+	// clear records older than a second to easily calculate FPS
 	while (app.statTrackingVars.render_times.length > 0 && app.statTrackingVars.render_times[0] <= now - 1000)
 		app.statTrackingVars.render_times.shift();
 	app.statTrackingVars.render_times.push(now);
+
+	// update render FPS on scoreboard
 	var text = app.scoreboard.text.split("\n");
 	text[2] = "renderer " + app.statTrackingVars.render_times.length.toString() + "fps";
 	app.scoreboard.text = text.join("\n");
 
+	// draw cars
 	for(const c in app.cars) {
 		app.cars[c].graphics.position.x = app.cars[c].body.position[0];
 		app.cars[c].graphics.position.y = app.cars[c].body.position[1];
@@ -40,7 +45,7 @@ function animate(app, recenter_camera) {
 		}
 	}
 
-	// for camera and UX
+	// calculate car with best score currently for camera and UI element positioning
 	var best_score = Number.MIN_SAFE_INTEGER,
 		best_car = 0;
 	for (const c in app.cars) {
@@ -76,13 +81,15 @@ function animate(app, recenter_camera) {
 		app.renderer.stage.position.y = car_pos_y;
 	}
 
+
 	// scoreboard positioning
 	app.scoreboard.x =  (app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.x)/app.renderer.stage.scale.x - 780/zoom;
 	app.scoreboard.y = (app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.y)/app.renderer.stage.scale.y + 430/zoom;
 	app.scoreboard.scale.x = 1/zoom;
 	app.scoreboard.scale.y = -1/zoom;
 
-	// neural net graph
+	
+	// draw neural net graph
 	renderGraph(app, best_car);
 
 	app.graph.text.x =  (app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.x)/app.renderer.stage.scale.x + 240/zoom;
@@ -110,7 +117,7 @@ function renderUpdate(app) {
 function renderGraph(app, best_car) {
 	app.graph.graphics.clear();
 
-
+	// calculate neural network inputs
 	var input = [];
 	input.push(Math.sqrt(app.cars[best_car].body.velocity[0]**2 + app.cars[best_car].body.velocity[1]**2) / 50);
 	input.push(Activations.sigmoid(app.cars[best_car].body.angularVelocity));  // angular velocity
@@ -129,7 +136,7 @@ function renderGraph(app, best_car) {
 	const y_offset = 15;
 	const y_spacing = 30;
 
-	// draw weight activations between neurons
+	// draw weight activations between input and hidden layers
 	var layer_in = input;
 	for(const l in net.hidden_layers) {
 		var layer_out = new Array(net.hidden_layers[l].neurons.length);
@@ -155,6 +162,7 @@ function renderGraph(app, best_car) {
 		layer_in = layer_out;
 	}
 
+	//  draw output weights
 	var output = Array(net.output_layer.neurons);
 	for(const n in net.output_layer.neurons) {
 		output[n] = 0;

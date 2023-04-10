@@ -30,6 +30,10 @@ function resetCars(app) {
 	}
 }
 
+function getTimeSincePrevChkpt(app, car_id) {
+	return (app.statTrackingVars.sim_steps - app.cars[car_id].score.times[app.cars[car_id].score.times.length-1])/m_sim_world_fps;
+}
+
 
 function setStepIntv(app) {
 	clearInterval(app.sim_step_intv);
@@ -45,33 +49,57 @@ function setStepIntv(app) {
 function simStep(num_steps, app) {
 	for(var s = 0; s < num_steps; ++s) {
 		const now = performance.now();
+
+		// clear records older than a second to easily calculate FPS
 		while (app.statTrackingVars.sim_times.length > 0 && app.statTrackingVars.sim_times[0] <= now - 1000)
 			app.statTrackingVars.sim_times.shift();
 		app.statTrackingVars.sim_times.push(now);
+
+		// update simulation FPS on scoreboard
 		var text = app.scoreboard.text.split("\n");
 		text[1] = "world " + app.statTrackingVars.sim_times.length.toString() + "fps";
 		app.scoreboard.text = text.join("\n");
+		
+		// check if cars have run out of time, if so reward them
+		// otherwise run inputs through the neural network
+		var racing = 0;  // count the number of cars still racing
 
-		var racing = 0;
 		for(const c in app.cars) {
-			// check if car reached the checkpoint time limit
+			// check if living cars have reached the time limits
 			if (app.cars[c].score.racing &&
-				(app.statTrackingVars.sim_steps - app.cars[c].score.times[app.cars[c].score.times.length-1])/m_sim_world_fps >= time_limit)
-			{
+				// if the car hasn't reached the first checkpoint yet, make sure they are at least moving after a second
+				(
+					((app.cars[c].score.chkpts == 0)  &&  (getTimeSincePrevChkpt(app, c) >= 1))
+					? (Math.abs(app.cars[c].body.velocity[0] + app.cars[c].body.velocity[1]) < 0.1)
+					: false
+				)
+				||
+				// otherwise, compare against the normal time limit calculated as the time since collecting the previous checkpoint
+				(
+					getTimeSincePrevChkpt(app, c) >= time_limit
+				)
+			) {
 				if (score_by_dist) {
 					// reward - distance from previous checkpoint
 					if (app.cars[c].score.chkpts >= 1) {
-						app.cars[c].score.score += Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2);
+						app.cars[c].score.score += Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2 + 
+															 (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2);
 					}
 				}
 
 				app.cars[c].score.racing = false;
 
+				// slow non-racing car to stop
+				app.cars[c].frontWheel.setBrakeForce(3);
+				app.cars[c].backWheel.setBrakeForce(5);
+				app.cars[c].frontWheel.steerValue = 1.57;
+				app.cars[c].backWheel.engineForce = 0;
 				// perpendicular wheels & random angular velocity for comedic effect
 				app.cars[c].frontWheel.steerValue = 1.57;
-				app.cars[c].body.angularVelocity = (2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1] / 20;
+				app.cars[c].body.angularVelocity = ((2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1]) / 20;
 			}
 
+			// calculate neural net inputs and forward progate
 			if(app.cars[c].score.racing) {
 				var input = [];
 				input.push( Math.sqrt(app.cars[c].body.velocity[0]**2 + app.cars[c].body.velocity[1]**2) / 50 );  // car speed
@@ -99,12 +127,6 @@ function simStep(num_steps, app) {
 
 				forwardPropCar(c, input, app.cars, app.gen_algo);
 				++racing;
-			}
-			else {
-				app.cars[c].frontWheel.setBrakeForce(3);
-				app.cars[c].backWheel.setBrakeForce(5);
-				app.cars[c].frontWheel.steerValue = 1.57;
-				app.cars[c].backWheel.engineForce = 0;
 			}
 		}
 
