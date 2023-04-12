@@ -20,7 +20,7 @@ class GenAlgo {
     GenerateNewPopulation() {
         this.population = [];
 
-        for(var i = 0; i < this.population_cnt; ++i) {
+        for (var i = 0; i < this.population_cnt; ++i) {
             var genome = new Genome();
             genome.fitness = 0;
             genome.net = new NNet(true, this.inputs, this.hidden_layers, this.outputs, this.hidden_neurons);
@@ -30,7 +30,7 @@ class GenAlgo {
     }
 
     infer(idx, input) {
-        if(idx >= this.population_cnt)
+        if (idx >= this.population_cnt)
             return null;
 
         return this.population[idx].net.forward(input);
@@ -38,18 +38,17 @@ class GenAlgo {
 
 
     GetBestGenomes(champion_cnt) {
-        var output = [];
+        var champions = [];
 
-        for (var g = 0; g < this.population_cnt; g++) {
-            if(this.population[g].fitness > 0) {
-                if(output.length < champion_cnt) {
-                    output.push(g);
-                }
-                else {
-                    for(var b = 0; b < output.length; b++) {
-                        if(this.population[g].fitness > this.population[output[b]].fitness) {
-                            output.splice(b, 0, g);
-                            output.pop();
+        for (var genome = 0; genome < this.population_cnt; genome++) {
+            if (this.population[genome].fitness > 0) {
+                if (champions.length < champion_cnt) {
+                    champions.push(genome);
+                } else {
+                    for (var champ = 0; champ < champions.length; champ++) {
+                        if (this.population[genome].fitness > this.population[champions[champ]].fitness) {
+                            champions.splice(champ, 0, genome);
+                            champions.pop();
 
                             break;
                         }
@@ -58,7 +57,7 @@ class GenAlgo {
             }
         }
 
-        return output;
+        return champions;
     }
 
     // randomly mix weights and biases of two networks
@@ -71,13 +70,13 @@ class GenAlgo {
         for (var hl = 0; hl < g1.net.hidden_layers.length; hl++) {
             for (var n = 0; n < g1.net.hidden_layers[hl].neurons.length; n++) {
                 for (var w = 0; w < g1.net.hidden_layers[hl].neurons[n].weights.length; w++) {
-                    if(Math.random() < m_mutation_chance) {
+                    if (Math.random() < m_mutation_chance) {
                         offspring1.net.hidden_layers[hl].neurons[n].weights[w] = g2.net.hidden_layers[hl].neurons[n].weights[w];
                         offspring2.net.hidden_layers[hl].neurons[n].weights[w] = g1.net.hidden_layers[hl].neurons[n].weights[w];
                     }
                 }
 
-                if(Math.random() < m_mutation_chance) {
+                if (Math.random() < m_mutation_chance) {
                     offspring1.net.hidden_layers[hl].neurons[n].bias = g2.net.hidden_layers[hl].neurons[n].bias;
                     offspring2.net.hidden_layers[hl].neurons[n].bias = g1.net.hidden_layers[hl].neurons[n].bias;
                 }
@@ -86,13 +85,13 @@ class GenAlgo {
 
         for (var n = 0; n < g1.net.output_layer.neurons.length; n++) {
             for (var w = 0; w < g1.net.output_layer.neurons[n].weights.length; w++) {
-                if(Math.random() < m_mutation_chance) {
+                if (Math.random() < m_mutation_chance) {
                     offspring1.net.output_layer.neurons[n].weights[w] = g2.net.output_layer.neurons[n].weights[w];
                     offspring2.net.output_layer.neurons[n].weights[w] = g1.net.output_layer.neurons[n].weights[w];
                 }
             }
 
-            if(Math.random() < m_mutation_chance) {
+            if (Math.random() < m_mutation_chance) {
                 offspring1.net.output_layer.neurons[n].bias = g2.net.output_layer.neurons[n].bias;
                 offspring2.net.output_layer.neurons[n].bias = g1.net.output_layer.neurons[n].bias;
             }
@@ -104,7 +103,7 @@ class GenAlgo {
 
     // slightly adjust the weights and biases of a network
     Mutate(genome) {
-        var mutated = _.cloneDeep(genome);  // lodash deep clone
+        var mutated = _.cloneDeep(genome); // lodash deep clone
         mutated.fitness = 0;
 
         for (var hl = 0; hl < mutated.net.hidden_layers.length; hl++) {
@@ -114,7 +113,7 @@ class GenAlgo {
                         mutated.net.hidden_layers[hl].neurons[n].weights[w] += (2 * Math.random() - 1) * m_learning_rate;
                 }
 
-                if(Math.random() < m_mutation_chance)
+                if (Math.random() < m_mutation_chance)
                     mutated.net.hidden_layers[hl].neurons[n].bias += (2 * Math.random() - 1) * m_learning_rate;
             }
         }
@@ -125,7 +124,7 @@ class GenAlgo {
                     mutated.net.output_layer.neurons[n].weights[w] += (2 * Math.random() - 1) * m_learning_rate;
             }
 
-            if(Math.random() < m_mutation_chance)
+            if (Math.random() < m_mutation_chance)
                 mutated.net.output_layer.neurons[n].bias += (2 * Math.random() - 1) * m_learning_rate;
         }
 
@@ -153,7 +152,7 @@ class GenAlgo {
         var best_genomes = this.GetBestGenomes(m_champions);
 
         // if there are no champions, create a new population
-        if(best_genomes.length == 0) {
+        if (best_genomes.length == 0) {
             this.GenerateNewPopulation();
             ++this.generation;
             return;
@@ -164,9 +163,9 @@ class GenAlgo {
             new_population.push(this.population[best_genomes[g]]);
 
         // crossbreed and mutate champions
-        for(var i = 0; i < best_genomes.length; ++i) {
-            for(var j = 0; j < best_genomes.length; ++j) {
-                if(i == j) {
+        for (var i = 0; i < best_genomes.length; ++i) {
+            for (var j = 0; j < best_genomes.length; ++j) {
+                if (i == j) {
                     var mutated = this.Mutate(this.population[best_genomes[i]]);
                     new_population.push(mutated);
                 }
@@ -198,7 +197,7 @@ class GenAlgo {
                         offspring[1] = this.Mutate(offspring[1]);
 
                         new_population.push(offspring[0]);
-                        if(remaining > 1)
+                        if (remaining > 1)
                             new_population.push(offspring[1]);
 
                         remaining -= 2;
@@ -214,7 +213,7 @@ class GenAlgo {
                         offspring = this.CrossBreed(this.population[best_genomes[i]], new_genome);
 
                         new_population.push(offspring[0]);
-                        if(remaining > 1)
+                        if (remaining > 1)
                             new_population.push(offspring[1]);
 
                         remaining -= 2;
@@ -222,7 +221,7 @@ class GenAlgo {
         }
         // crossbreed champions and mutate offspring
         else {
-            while(remaining > 0)
+            while (remaining > 0)
                 for (var i = 0; i < best_genomes.length; ++i)
                     for (var j = 0; j < best_genomes.length; ++j)
                         if (remaining > 0) {
@@ -232,7 +231,7 @@ class GenAlgo {
                             offspring[1] = this.Mutate(offspring[1]);
 
                             new_population.push(offspring[0]);
-                            if(remaining > 1)
+                            if (remaining > 1)
                                 new_population.push(offspring[1]);
 
                             remaining -= 2;

@@ -10,8 +10,7 @@ function animate(app, recenter_camera) {
     const now = performance.now();
 
     // clear records older than a second to easily calculate FPS
-    while (app.statTrackingVars.render_times.length > 0
-        && app.statTrackingVars.render_times[0] <= (now - 1000)) {
+    while (app.statTrackingVars.render_times.length > 0  &&  app.statTrackingVars.render_times[0] <= (now - 1000)) {
         app.statTrackingVars.render_times.shift();
     }
     app.statTrackingVars.render_times.push(now);

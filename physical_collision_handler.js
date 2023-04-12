@@ -4,7 +4,7 @@ function initWorldCollisionEvent(app) {
         var car, obj;
 
         // cars have mass of 0.8, walls and checkpoints are 0.0
-        if(event.bodyA.mass == 0.8) {
+        if (event.bodyA.mass == 0.8) {
             car = event.bodyA;
             obj = event.bodyB;
         }
@@ -14,9 +14,15 @@ function initWorldCollisionEvent(app) {
         }
 
         var c = 0;
-        for(c in app.cars)
+        for (c in app.cars)
             if (app.cars[c].body.id == car.id)
                 break;
+
+
+        // return early if the car is inactive
+        if (!app.cars[c].score.racing)
+            return;
+
 
         // check if checkpoint collision, otherwise assume wall collision
         var get_pt = false;
@@ -26,46 +32,49 @@ function initWorldCollisionEvent(app) {
                 break;
             }
 
+
         // checkpoint
-        if(get_pt  &&  app.cars[c].score.racing  &&  (app.cars[c].score.chkpts == obj.id - 1)) {
+        if (get_pt) {
+            // if the checkpoint isn't the next objective checkpoint for the car, don't reward
+            if (app.cars[c].score.chkpts != obj.id - 1)
+                return;
+
             ++app.cars[c].score.chkpts;
             app.cars[c].score.times.push(app.statTrackingVars.sim_steps);
             app.cars[c].score.score += 100;
 
-            // reward for time during relatively straight sections of track to
-            // improve learning of tight turns
-            if (app.statTrackingVars.record_chkpts == app.track.chkpts.length ||
-                    ((app.cars[c].score.chkpts <= 2 || app.cars[c].score.chkpts >= 8) &&
-                     (app.cars[c].score.chkpts <= 20 || app.cars[c].score.chkpts >= 40)))
-            {
+            // only reward for time during relatively straight sections of track until track is completed
+            // in order to improve learning of tight turns
+            const completed_track = (app.statTrackingVars.record_chkpts == app.track.chkpts.length);
+            const score_by_speed_sections = ((app.cars[c].score.chkpts <= 2 || app.cars[c].score.chkpts >= 8) &&
+                                             (app.cars[c].score.chkpts <= 20 || app.cars[c].score.chkpts >= 40));
+
+            if (completed_track || score_by_speed_sections)
                 app.cars[c].score.score += time_limit - (app.cars[c].score.times[app.cars[c].score.times.length-1] - app.cars[c].score.times[app.cars[c].score.times.length-2])/m_sim_world_fps;
-            }
         }
         // wall
-        else if(!get_pt && app.cars[c].score.racing) {
+        else {
             app.cars[c].score.score -= 10 * app.cars[c].score.chkpts;
 
             // reward - distance from previous checkpoint
-            if (app.cars[c].score.chkpts >= 1) {
-                app.cars[c].score.score += Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2 + 
-                                                     (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2);
-            }
+            if (app.cars[c].score.chkpts >= 1)
+                app.cars[c].score.score += Math.sqrt( (app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2
+                                                     +(app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2 );
 
             // penalize - distance to next checkpoint
-            if (app.cars[c].score.chkpts < app.track.chkpts.length) {
-                app.cars[c].score.score -= Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts].position[0])**2 + (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts].position[1])**2);
-            }
+            if (app.cars[c].score.chkpts < app.track.chkpts.length)
+                app.cars[c].score.score -= Math.sqrt( (app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts].position[0])**2
+                                                     +(app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts].position[1])**2 );
 
             app.cars[c].score.racing = false;
 
             // slow non-racing car to stop
             app.cars[c].frontWheel.setBrakeForce(3);
             app.cars[c].backWheel.setBrakeForce(5);
-            app.cars[c].frontWheel.steerValue = 1.57;
             app.cars[c].backWheel.engineForce = 0;
             // perpendicular wheels & random angular velocity for comedic effect
             app.cars[c].frontWheel.steerValue = 1.57;
-            app.cars[c].body.angularVelocity = (2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1] / 10;
+            app.cars[c].body.angularVelocity = ((2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1]) / 10;
         }
     });
 }

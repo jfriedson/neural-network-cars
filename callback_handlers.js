@@ -13,7 +13,7 @@ function toggleSimSpeed(app) {
         m_sim_intv_fps = 60;
         m_render_fps = 30;
     }
-    
+
     console.log("sim fps: " + m_sim_intv_fps)
     console.log("render fps: " + m_render_fps);
 
@@ -24,11 +24,11 @@ function toggleSimSpeed(app) {
 
 // scroll wheel - zoom camera in and out
 function setMouseZoomEvent(app) {
-    app.renderer.renderer.view.addEventListener('wheel', function(event) {
+    app.renderer.renderer.view.addEventListener('wheel', function (event) {
         event.preventDefault();
 
-        if((event.deltaX + event.deltaY + event.deltaZ) > 0) {
-            if(zoom > 1)
+        if ((event.deltaX + event.deltaY + event.deltaZ) > 0) {
+            if (zoom > 1)
                 zoom -= 1;
         } else
             zoom += 1;
@@ -50,10 +50,10 @@ function canvasResize(app) {
 
     app.renderer.renderer.resize(w, h);
 
-    app.renderer.stage.scale.x = zoom*w/1600;
-    app.renderer.stage.scale.y = -zoom*h/900;
+    app.renderer.stage.scale.x = zoom * w / 1600;
+    app.renderer.stage.scale.y = -zoom * h / 900;
 
-    if(app.renderer.stage.scale.x > (-app.renderer.stage.scale.y))
+    if (app.renderer.stage.scale.x > (-app.renderer.stage.scale.y))
         app.renderer.stage.scale.x = -app.renderer.stage.scale.y;
     else
         app.renderer.stage.scale.y = -app.renderer.stage.scale.x;

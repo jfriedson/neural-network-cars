@@ -7,17 +7,22 @@ function forwardPropCar(idx, input, cars, gen_algo) {
 
     cars[idx].prevOutputs = output;
 
-    cars[idx].frontWheel.steerValue = ((2*car_max_steer) * output[0] - car_max_steer);
+    cars[idx].frontWheel.steerValue = ((2 * car_max_steer) * output[0] - car_max_steer);
     cars[idx].backWheel.engineForce = ((car_max_forward_accel + car_max_reverse_accel) * output[1] - car_max_reverse_accel);
-    cars[idx].frontWheel.setBrakeForce(car_max_std_brake * .65 * output[2]);
+    cars[idx].frontWheel.setBrakeForce((car_max_std_brake * .65) * output[2]);
     cars[idx].backWheel.setBrakeForce((car_max_std_brake * .35) * output[2] + (car_max_e_brake * output[3]));
 }
 
 
 function resetCars(app) {
     for (c in app.cars) {
-        app.cars[c].score = {racing: true, chkpts : 0, times : [app.statTrackingVars.sim_steps], score : 0};
-        app.cars[c].body.position = [app.track_data.start[0], app.track_data.start[1] + Math.random() * 10 - 5];
+        app.cars[c].score = { racing: true,
+                              chkpts : 0,
+                              times : [app.statTrackingVars.sim_steps],
+                              score : 0 };
+
+        app.cars[c].body.position = [ app.track_data.start[0],
+                                      app.track_data.start[1] + Math.random() * 10 - 5];
         app.cars[c].body.angle = app.track_data.start[2];
         app.cars[c].body.setZeroForce();
         app.cars[c].body.velocity = [0,0];
@@ -47,13 +52,11 @@ function setStepIntv(app) {
 }
 
 function simStep(num_steps, app) {
-    for(var s = 0; s < num_steps; ++s) {
+    for (var s = 0; s < num_steps; ++s) {
         const now = performance.now();
 
         // clear records older than a second to easily calculate FPS
-        while (app.statTrackingVars.sim_times.length > 0
-            && app.statTrackingVars.sim_times[0] <= (now - 1000))
-        {
+        while ((app.statTrackingVars.sim_times.length > 0) && (app.statTrackingVars.sim_times[0] <= (now - 1000))) {
             app.statTrackingVars.sim_times.shift();
         }
         app.statTrackingVars.sim_times.push(now);
@@ -67,39 +70,49 @@ function simStep(num_steps, app) {
         // otherwise run inputs through the neural network
         var racing = 0;  // count the number of cars still racing
 
-        for(const c in app.cars) {
-            // check if living cars have reached the time limits		
-            if (app.cars[c].score.racing && (
+        
+        // check if living cars have reached the time limits	
+        for (const c in app.cars) {		
+            if (app.cars[c].score.racing) {
+                var chkpt_time_limit_reached = false;
+
                 // if the car hasn't reached the first checkpoint yet, make sure they are at least moving after a second
-                ((app.cars[c].score.chkpts == 0
-                  &&  getTimeSincePrevChkpt(app, c) >= 1)
+                if (app.cars[c].score.chkpts == 0)
+                    if (getTimeSincePrevChkpt(app, c) >= 1)
+                        if (Math.abs(app.cars[c].body.velocity[0] + app.cars[c].body.velocity[1]) < .05)
+                            chkpt_time_limit_reached =  true;
 
-                    ? (Math.abs(app.cars[c].body.velocity[0] + app.cars[c].body.velocity[1]) < 0.1)
-                    : false)
-                ||
-                // otherwise, compare against the normal time limit calculated as the time since collecting the previous checkpoint
-                getTimeSincePrevChkpt(app, c) >= time_limit
-            )) {
-                // reward - distance from previous checkpoint
-                if (app.cars[c].score.chkpts >= 1) {
-                    app.cars[c].score.score += Math.sqrt((app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2 + 
-                                                         (app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2);
+                // check if it's hit the normal time limit in any case
+                if (getTimeSincePrevChkpt(app, c) >= time_limit)
+                    chkpt_time_limit_reached = true;
+
+                if (chkpt_time_limit_reached) {
+                    // reward - distance from previous checkpoint
+                    if (app.cars[c].score.chkpts >= 1) {
+                        app.cars[c].score.score += Math.sqrt( (app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2
+                                                             +(app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2 );
+                                                            
+                        // penalize - distance to next checkpoint
+                        // ignore the first checkpoint to encourage accelerator use
+                        if (app.cars[c].score.chkpts < app.track.chkpts.length)
+                        app.cars[c].score.score -= Math.sqrt( (app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts].position[0])**2
+                                                            +(app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts].position[1])**2 );
+                    }
+
+                    app.cars[c].score.racing = false;
+
+                    // slow non-racing car to stop
+                    app.cars[c].frontWheel.setBrakeForce(3);
+                    app.cars[c].backWheel.setBrakeForce(5);
+                    app.cars[c].backWheel.engineForce = 0;
+                    // perpendicular wheels & random angular velocity for comedic effect
+                    app.cars[c].frontWheel.steerValue = 1.57;
+                    app.cars[c].body.angularVelocity = ((2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1]) / 20;
                 }
-
-                app.cars[c].score.racing = false;
-
-                // slow non-racing car to stop
-                app.cars[c].frontWheel.setBrakeForce(3);
-                app.cars[c].backWheel.setBrakeForce(5);
-                app.cars[c].frontWheel.steerValue = 1.57;
-                app.cars[c].backWheel.engineForce = 0;
-                // perpendicular wheels & random angular velocity for comedic effect
-                app.cars[c].frontWheel.steerValue = 1.57;
-                app.cars[c].body.angularVelocity = ((2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1]) / 20;
             }
 
             // calculate neural net inputs and forward progate
-            if(app.cars[c].score.racing) {
+            if (app.cars[c].score.racing) {
                 var input = [];
                 input.push( Math.sqrt(app.cars[c].body.velocity[0]**2 + app.cars[c].body.velocity[1]**2) / 50 );  // car speed
                 input.push(Activations.sigmoid(app.cars[c].body.angularVelocity));  // angular velocity
@@ -110,7 +123,7 @@ function simStep(num_steps, app) {
                 input.push(app.cars[c].prevOutputs[3]);  // e-brake
 
                 // 7 distance rays
-                for(var i = 0; i < 7; ++i) {
+                for (var i = 0; i < 7; ++i) {
                     app.cars[c].rays[i].phys_world.from = app.cars[c].body.position;
                     app.cars[c].rays[i].phys_world.to = [app.cars[c].body.position[0] - Math.sin(app.cars[c].body.angle + app.cars[c].rays[i].angle) * app.cars[c].rays[i].length,
                                                          app.cars[c].body.position[1] + Math.cos(app.cars[c].body.angle + app.cars[c].rays[i].angle) * app.cars[c].rays[i].length];
@@ -146,13 +159,13 @@ function simStep(num_steps, app) {
             resetCars(app);
 
             // run genetic algorithm
-            m_mutation_chance = Math.min(Math.max(.05, m_mutation_chance - (app.gen_algo.generation/10000) + (app.statTrackingVars.record_score_time/10000) + (app.statTrackingVars.record_chkpts_time/10000)), .3)
-            m_learning_rate = Math.min(Math.max(.05, m_learning_rate - (app.gen_algo.generation/10000) + (app.statTrackingVars.record_score_time/10000) + (app.statTrackingVars.record_chkpts_time/10000)), .25)
+            m_mutation_chance = Math.min(Math.max(.05, m_mutation_chance - (app.gen_algo.generation/10000) + (app.statTrackingVars.record_score_time/10000) + (app.statTrackingVars.record_chkpts_time/10000)), .3);
+            m_learning_rate = Math.min(Math.max(.05, m_learning_rate - (app.gen_algo.generation/10000) + (app.statTrackingVars.record_score_time/10000) + (app.statTrackingVars.record_chkpts_time/10000)), .25);
             
             app.gen_algo.BreedPopulation();
 
             // update checkpoint record
-            if(best_chkpt > app.statTrackingVars.record_chkpts) {
+            if (best_chkpt > app.statTrackingVars.record_chkpts) {
                 app.statTrackingVars.record_chkpts = best_chkpt;
                 app.statTrackingVars.record_chkpts_time = 0;
             }
@@ -161,7 +174,7 @@ function simStep(num_steps, app) {
             }
             
             // update checkpoint record
-            if(best_score > app.statTrackingVars.record_score) {
+            if (best_score > app.statTrackingVars.record_score) {
                 app.statTrackingVars.record_score = best_score;
                 app.statTrackingVars.record_score_time = 0;
 
@@ -169,7 +182,7 @@ function simStep(num_steps, app) {
                 var time_diff = performance.now() - app.statTrackingVars.start_time;
                 console.log("New record of " + app.statTrackingVars.record_score.toFixed(3) + " in gen " + (app.gen_algo.generation-1) + " at " + Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(Date.now()) + " after " + Math.floor(time_diff/1440000) + "h " + Math.floor(time_diff/60000)%60 + "m " + Math.floor(time_diff/1000)%60 + "s");
                 if (text.length == 11) {
-                    for(var i = 6; i < 11; ++i)
+                    for (var i = 6; i < 11; ++i)
                         text[i] = text[i+1];
 
                     text[text.length-1] = app.statTrackingVars.record_score.toFixed(3) + " at gen " + (app.gen_algo.generation - 1);

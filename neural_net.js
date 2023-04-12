@@ -5,24 +5,46 @@ class NNet {
         this.output_layer = null;
 
         // if init is true, create network with random weights and biases
-        if(init) {
-            this.hidden_layers.push(new NNLayer(true, inputs, hidden_neurons, Activations.leakyrelu));
-            for (var hl = 1; hl < hidden_layers; hl++)
-                this.hidden_layers.push(new NNLayer(true, hidden_neurons, hidden_neurons, Activations.leakyrelu));
+        if (init) {
+            this.hidden_layers.push(new NNLayer(true,
+                                                inputs,
+                                                hidden_neurons,
+                                                Activations.leakyrelu));
 
-            this.output_layer = new NNLayer(true, hidden_neurons, output_layer, Activations.sigmoid);
+            for (var hl = 1; hl < hidden_layers; hl++) {
+                this.hidden_layers.push(new NNLayer(true,
+                                                    hidden_neurons,
+                                                    hidden_neurons,
+                                                    Activations.leakyrelu));
+            }
+
+            this.output_layer = new NNLayer(true,
+                                            hidden_neurons,
+                                            output_layer,
+                                            Activations.sigmoid);
         }
         else {
-            this.hidden_layers.push(new NNLayer(false, inputs, hidden_layers[0].neurons, Activations.leakyrelu));
-            for (var hl = 1; hl < hidden_layers; hl++)
-                this.hidden_layers.push(new NNLayer(false, net_obj.hidden_layers[0].neurons.length, net_obj.hidden_layers[hl].neurons, Activations.leakyrelu));
+            this.hidden_layers.push(new NNLayer(false,
+                                                this.inputs,
+                                                hidden_layers[0].neurons,
+                                                Activations.leakyrelu));
 
-            this.output_layer = new NNLayer(false, net_obj.hidden_layers[0].neurons.length, output_layer.neurons, Activations.sigmoid);
+            for (var hl = 1; hl < hidden_layers.length; hl++) {
+                this.hidden_layers.push(new NNLayer(false,
+                                                    hidden_layers[hl - 1].neurons.length,
+                                                    hidden_layers[hl].neurons,
+                                                    Activations.leakyrelu));
+            }
+
+            this.output_layer = new NNLayer(false,
+                                            hidden_layers[hidden_layers.length - 1].neurons.length,
+                                            output_layer.neurons,
+                                            Activations.sigmoid);
         }
     }
 
     forward(input) {
-        if(input.length != this.inputs) {
+        if (input.length != this.inputs) {
             console.log(input.length + "   " + this.inputs)
             console.log("input array length doesn't match the number of inputs expected by the network")
             return [.5,1,0,0];
@@ -55,11 +77,22 @@ class NNet {
         this.inputs = net_obj.inputs;
         this.hidden_layers = [];
 
-        this.hidden_layers.push(new NNLayer(false, this.inputs, net_obj.hidden_layers[0].neurons, Activations.leakyrelu));
-        for (var hl = 1; hl < net_obj.hidden_layers.length; hl++)
-            this.hidden_layers.push(new NNLayer(false, net_obj.hidden_layers[0].neurons.length, net_obj.hidden_layers[hl].neurons, Activations.leakyrelu));
+        this.hidden_layers.push(new NNLayer(false,
+                                            this.inputs,
+                                            net_obj.hidden_layers[0].neurons,
+                                            Activations.leakyrelu));
 
-        this.output_layer = new NNLayer(false, net_obj.hidden_layers[0].neurons.length, net_obj.output_layer.neurons, Activations.sigmoid);
+        for (var hl = 1; hl < net_obj.hidden_layers.length; hl++) {
+            this.hidden_layers.push(new NNLayer(false,
+                                                net_obj.hidden_layers[hl - 1].neurons.length,
+                                                net_obj.hidden_layers[hl].neurons,
+                                                Activations.leakyrelu));
+        }
+
+        this.output_layer = new NNLayer(false,
+                                        net_obj.hidden_layers[net_obj.hidden_layers.length - 1].neurons.length,
+                                        net_obj.output_layer.neurons,
+                                        Activations.sigmoid);
     }
 }
 
@@ -88,7 +121,7 @@ class NNLayer {
         this.neurons = [];
         this.activation = activation;
 
-        if(init) {
+        if (init) {
             for (var n = 0; n < neurons; n++)
                 this.neurons.push(new Neuron(true, inputs));
         }
@@ -99,7 +132,7 @@ class NNLayer {
     }
 
     forward(input) {
-        if(input.length != this.inputs) {
+        if (input.length != this.inputs) {
             console.log("input array length doesn't match the number of inputs expected by the layer" + id)
             return input;
         }
@@ -133,7 +166,7 @@ class Neuron {
     }
 
     forward(input) {
-        if(input.length != this.weights.length) {
+        if (input.length != this.weights.length) {
             console.log(input.length + " != " + this.weights.length)
             console.log("input array length doesn't match the number of weights expected by the neuron");
             return null;
