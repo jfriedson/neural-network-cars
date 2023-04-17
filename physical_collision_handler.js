@@ -54,12 +54,10 @@ function initWorldCollisionEvent(app) {
         }
         // wall
         else {
-            app.cars[c].score.score -= 10 * app.cars[c].score.chkpts;
-
             // reward - distance from previous checkpoint
             if (app.cars[c].score.chkpts >= 1)
-                app.cars[c].score.score += Math.sqrt( (app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2
-                                                     +(app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2 );
+                app.cars[c].score.score += .9 * Math.sqrt( (app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2
+                                                          +(app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2 );
 
             // penalize - distance to next checkpoint
             if (app.cars[c].score.chkpts < app.track.chkpts.length)

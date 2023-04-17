@@ -79,7 +79,7 @@ function simStep(num_steps, app) {
                 // if the car hasn't reached the first checkpoint yet, make sure they are at least moving after a second
                 if (app.cars[c].score.chkpts == 0)
                     if (getTimeSincePrevChkpt(app, c) >= 1)
-                        if (Math.abs(app.cars[c].body.velocity[0] + app.cars[c].body.velocity[1]) < .05)
+                        if (Math.abs(app.cars[c].body.velocity[0]) + Math.abs(app.cars[c].body.velocity[1]) < .05)
                             chkpt_time_limit_reached =  true;
 
                 // check if it's hit the normal time limit in any case
@@ -89,14 +89,14 @@ function simStep(num_steps, app) {
                 if (chkpt_time_limit_reached) {
                     // reward - distance from previous checkpoint
                     if (app.cars[c].score.chkpts >= 1) {
-                        app.cars[c].score.score += Math.sqrt( (app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2
-                                                             +(app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2 );
+                        app.cars[c].score.score += .8 * Math.sqrt( (app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts-1].position[0])**2
+                                                                  +(app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts-1].position[1])**2 );
                                                             
                         // penalize - distance to next checkpoint
                         // ignore the first checkpoint to encourage accelerator use
                         if (app.cars[c].score.chkpts < app.track.chkpts.length)
-                        app.cars[c].score.score -= Math.sqrt( (app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts].position[0])**2
-                                                            +(app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts].position[1])**2 );
+                            app.cars[c].score.score -= Math.sqrt( (app.cars[c].body.position[0] - app.track.chkpts[app.cars[c].score.chkpts].position[0])**2
+                                                                 +(app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts].position[1])**2 );
                     }
 
                     app.cars[c].score.racing = false;
@@ -169,9 +169,8 @@ function simStep(num_steps, app) {
                 app.statTrackingVars.record_chkpts = best_chkpt;
                 app.statTrackingVars.record_chkpts_time = 0;
             }
-            else {
+            else
                 app.statTrackingVars.record_chkpts_time++;
-            }
             
             // update checkpoint record
             if (best_score > app.statTrackingVars.record_score) {
@@ -180,7 +179,12 @@ function simStep(num_steps, app) {
 
                 // log to console and scoreboard in the case of a new high score
                 var time_diff = performance.now() - app.statTrackingVars.start_time;
-                console.log("New record of " + app.statTrackingVars.record_score.toFixed(3) + " in gen " + (app.gen_algo.generation-1) + " at " + Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(Date.now()) + " after " + Math.floor(time_diff/1440000) + "h " + Math.floor(time_diff/60000)%60 + "m " + Math.floor(time_diff/1000)%60 + "s");
+                console.log("New record of " + app.statTrackingVars.record_score.toFixed(3) +
+                            " in gen " + (app.gen_algo.generation-1) +
+                            " at " + Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(Date.now()) +
+                            " after " + Math.floor(time_diff/1440000) + "h " + Math.floor(time_diff/60000)%60 + "m " + Math.floor(time_diff/1000)%60 + "s");
+
+                // when scoreboard text contains 11 lines, remove the oldest leaderboard entry
                 if (text.length == 11) {
                     for (var i = 6; i < 11; ++i)
                         text[i] = text[i+1];
@@ -190,9 +194,8 @@ function simStep(num_steps, app) {
                 else
                     text.push(app.statTrackingVars.record_score.toFixed(3) + " at gen " + (app.gen_algo.generation-1));
             }
-            else {
+            else
                 app.statTrackingVars.record_score_time++;
-            }
 
             //var text = scoreboard.text.split("\n");
             text[4] = "Generation " + app.gen_algo.generation;

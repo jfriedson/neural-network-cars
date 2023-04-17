@@ -34,10 +34,14 @@ Champions are determined by performance score which is a sum of rewards and dedu
 - Rewards
     - yellow checkpoints - 100 points
     - 10 points minus time in seconds between 2 checkpoints
-    - distance from previous checkpoint in a crash or timeout
+    - .9 * distance from previous checkpoint in a crash
+    - .8 * distance from previous checkpoint in a timeout
 - Penalties
-    - 5 points multiplied by collected checkpoints in a crash
     - distance to next checkpoint in a crash or timeout
+
+The reason for rewarding more points in the event of a crash vs a timeout is that timeouts encourage use of the brakes which results in slower training times. Penalizing crashes also promotes the same behavior of brake use.\
+The reason for penalizing more than rewarding in a crash or timeout is to coax the cars to crash closer to the following checkpoint until they ultimately reach it.
+
 
 ## How to create your own race track
 ### Track preparation
