@@ -28,6 +28,8 @@ const SmartCarApp = class {
         initGraph(this);
         initGenAlgo(this);
         initScoreboard(this);
+        
+        sortGraphics(this);
 
         initWorldCollisionEvent(this);
 

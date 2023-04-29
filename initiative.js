@@ -71,13 +71,15 @@ function initCars(app) {
 }
 
 function initGraph(app) {
-    app.graph = {graphics : new PIXI.Graphics(),
-                 text : new PIXI.Text("best performing network activations",
-                                      { fontFamily : 'Arial',
-                                        fontSize: 30,
-                                        fill : 0xffffff,
-                                        align : 'left' })};
+    app.graph = { graphics : new PIXI.Graphics(),
+                  text : new PIXI.Text("best performing network activations",
+                                       { fontFamily : 'Arial',
+                                         fontSize: 30,
+                                         fill : 0xffffff,
+                                         align : 'left' })};
 
+    app.graph.graphics.zIndex = 4;
+    app.graph.text.zIndex = 4;
     app.renderer.stage.addChild(app.graph.graphics);
     app.renderer.stage.addChild(app.graph.text);
 }
@@ -94,10 +96,17 @@ function initGenAlgo(app) {
 
 function initScoreboard(app) {
     app.scoreboard = new PIXI.Text("click canvas to toggle sim speed\nworld 0fps\nrenderer 0fps\n\nGeneration 1\nLeaderboard",
-                                    {fontFamily : 'Arial',
-                                    fontSize: 30,
-                                    fill : 0xffffff,
-                                    align : 'left'});
+                                    { fontFamily : 'Arial',
+                                      fontSize: 30,
+                                      fill : 0xffffff,
+                                      align : 'left' });
     
+    app.scoreboard.zIndex = 4;
     app.renderer.stage.addChild(app.scoreboard);
+}
+
+function sortGraphics(app) {
+    app.renderer.stage.sortableChildren = true;
+    app.renderer.stage.sortChildren();
+    app.renderer.stage.sortableChildren = false;
 }

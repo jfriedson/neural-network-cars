@@ -97,6 +97,7 @@ function generateTrack(track, track_data, phys_world, renderer) {
         track.graphics.lineTo(track_data.miscWalls[i][1][0], track_data.miscWalls[i][1][1]);
     }
 
+    track.graphics.zIndex = 1;
     renderer.stage.addChild(track.graphics);
 }
 
@@ -149,9 +150,12 @@ function generateCar(car, track_data, idx, phys_world, renderer) {
     car.rays.push({length : 20, angle : 1.3962634016, phys_world : new p2.Ray({mode: p2.Ray.CLOSEST, collisionMask : phys_world.collisionGroups.TRACK}), result : new p2.RaycastResult(), graphic : new PIXI.Graphics()});
 
     // add car and rays to stage
-    for (var i = 0; i < 7; ++i)
+    for (var i = 0; i < 7; ++i) {
+        car.rays[i].graphic.zIndex = 2;
         renderer.stage.addChild(car.rays[i].graphic);
+    }
 
+    car.graphics.zIndex = 3;
     renderer.stage.addChild(car.graphics);
 
     car.prevOutputs.push(0.5);  // set steering to neutral
