@@ -23,7 +23,7 @@ The neural networks driving each car have the following attributes
     - emergency brakes
 
 Each input is normalized to enhance the genetic algorithm's performance.\
-The network applies leakyRELU activation on the input and hidden layers and sigmoid activation on the output.\
+The network applies leakyRELU activation on the hidden layer and sigmoid activation on the output.\
 The network outputs are then denormalized and applied to the physical body of the car.
 
 

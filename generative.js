@@ -120,7 +120,7 @@ function generateCar(car, track_data, idx, phys_world, renderer) {
     if (idx == 0)
         car.graphics.beginFill(0xde8818);
     else if (idx < m_champions)
-        car.graphics.beginFill(0xa35c0b);
+        car.graphics.beginFill(0xb56810);
     else
         car.graphics.beginFill(0x4f6910);
 
