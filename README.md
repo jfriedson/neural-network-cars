@@ -3,6 +3,8 @@ This project demonstrates the process of using genetic algorithms to breed and m
 
 You can see the live demo at my website: https://JoshFriedson.com/projects/smart_car
 
+![Demo screenshot](demo.jpg?raw=true)
+
 
 ## Architecture
 ### Neural Network
