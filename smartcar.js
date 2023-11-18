@@ -15,9 +15,16 @@ const SmartCarApp = class {
             render_times : []
         }
 
-        // world and render interval timers
-        this.sim_step_intv = null;
-        this.animate_intv = null;
+        this.cameraVars = {
+            camera_target : 0,
+            camera_lerp_alpha : 1,
+            zoom_base : 0,
+            zoom_mod : 18
+        }
+
+        // phys and render interval timers
+        this.phys_intv = null;
+        this.render_intv = null;
 
         // construct objects physical bodies and render objects
         initRenderer(this);
@@ -41,8 +48,8 @@ const SmartCarApp = class {
 
         canvasResize(this);
 
-        setStepIntv(this);
-        setAnimIntv(this);
+        setPhysIntv(this);
+        setRenderIntv(this);
     }
 
     // the below callback handlers forward event handling to global methods
@@ -56,8 +63,8 @@ const SmartCarApp = class {
     loadNetForwarder(e) { loadNet(e, this); }
     loadPretrainedNetForwarder(e) { loadPretrainedNet(e, this); }
 
-    stepAnimation() { animate(this, false); }
-    stepPhysWorld(num_steps) { simStep(num_steps, this); }
+    render() { render(this, false); }
+    stepPhys(num_steps) { stepPhys(num_steps, this); }
 }
 
 new SmartCarApp();

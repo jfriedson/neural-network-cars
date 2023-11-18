@@ -23,36 +23,35 @@
         <!-- major modifiers for simulation -->
         <script type="text/javascript">
             // neural network settings
-            const net_input_cnt = 13,
-                  net_output_cnt = 4;
+            const g_net_input_cnt = 13,
+                  g_net_output_cnt = 4;
 
-            const m_hidden_layers = 1,
-                  m_hidden_neurons = 10;
+            const g_hidden_layers = 1,
+                  g_hidden_neurons = 10;
 
             // genetic algo settings
-            var m_mutation_chance = 0.25,
-                m_learning_rate = 0.15;
-
-            // simulation settings
-            const time_limit = 7,
-                  m_car_amt = 30,
-                  m_champions = 3;
+            var g_mutation_chance = 0.25,
+                g_learning_rate = 0.15;
 
             // car physic constants
-            const car_max_steer = 0.53,
-                  car_max_forward_accel = 12,
-                  car_max_reverse_accel = 5,
-                  car_max_std_brake = 15,
-                  car_max_e_brake = 8;
+            const g_car_max_steer = 0.53,
+                  g_car_max_forward_accel = 12,
+                  g_car_max_reverse_accel = 5,
+                  g_car_max_std_brake = 15,
+                  g_car_max_e_brake = 8;
 
-            // render loop variables
-            var zoom = 20,
-                m_render_fps = 30,
-                m_render_delay = 1000/m_render_fps,
-                m_sim_intv_fps = 60,    // world steps per second
-                m_sim_world_fps = 60,   // world step size
-                m_sim_delay = 1000/m_sim_intv_fps,
-                m_sim_step = 1000/m_sim_world_fps/1000;
+            // simulation settings
+            const g_time_limit = 7,
+                  g_car_amt = 30,
+                  g_champions = 3;
+
+            // loop control variables
+            var g_render_fps = 30,
+                g_phys_fast_speed = false,
+                g_phys_iter_per_sec_normal = 60,  // physics iterations per second
+                g_phys_steps_per_iter_normal = 1, // physics steps per iteration
+                g_phys_iter_per_sec_fast = 100,    // physics iterations per second
+                g_phys_steps_per_iter_fast = 10;   // physics steps per iteration
         </script>
         
         <script type="text/javascript" src="neural_net.js"></script>

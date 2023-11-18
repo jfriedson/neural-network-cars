@@ -5,20 +5,9 @@ function initSpeedToggle(app) {
 }
 
 function toggleSimSpeed(app) {
-    if (m_sim_intv_fps == 60) {
-        m_sim_intv_fps = 1000;
-        m_render_fps = 10;
-    }
-    else {
-        m_sim_intv_fps = 60;
-        m_render_fps = 30;
-    }
+    g_phys_fast_speed = !g_phys_fast_speed;
 
-    console.log("sim fps: " + m_sim_intv_fps)
-    console.log("render fps: " + m_render_fps);
-
-    setStepIntv(app);
-    setAnimIntv(app);
+    setPhysIntv(app);
 }
 
 
@@ -28,12 +17,17 @@ function setMouseZoomEvent(app) {
         event.preventDefault();
 
         if ((event.deltaX + event.deltaY + event.deltaZ) > 0) {
-            if (zoom > 1)
-                zoom -= 1;
-        } else
-            zoom += 1;
+            if (app.cameraVars.zoom_mod > 1) {
+                app.cameraVars.zoom_mod -= 1;
+                app.cameraVars.camera_lerp_value = 0;
+            }
+        }
+        else if (app.cameraVars.zoom_mod < 20) {
+            app.cameraVars.zoom_mod += 1;
+            app.cameraVars.camera_lerp_value = 0;
+        }
 
-        canvasResize(app);
+        renderUpdate(app);
     });
 }
 
@@ -50,13 +44,15 @@ function canvasResize(app) {
 
     app.renderer.renderer.resize(w, h);
 
-    app.renderer.stage.scale.x = zoom * w / 1600;
-    app.renderer.stage.scale.y = -zoom * h / 900;
+    scale_x = w / 1600;
+    scale_y = h / 900;
 
-    if (app.renderer.stage.scale.x > (-app.renderer.stage.scale.y))
-        app.renderer.stage.scale.x = -app.renderer.stage.scale.y;
+    if (scale_x < scale_y)
+        app.cameraVars.zoom_base = scale_x;
     else
-        app.renderer.stage.scale.y = -app.renderer.stage.scale.x;
+        app.cameraVars.zoom_base = scale_y;
+
+    app.cameraVars.camera_lerp_value = 0;
 
     renderUpdate(app);
 }

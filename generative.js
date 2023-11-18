@@ -116,10 +116,10 @@ function generateCar(car, track_data, idx, phys_world, renderer) {
     car.body.shape = p2.Shape.BOX;
     phys_world.addBody(car.body);
 
-    // color champions orange, others blue
+    // color champions yellow and orange. other cars are green
     if (idx == 0)
         car.graphics.beginFill(0xde8818);
-    else if (idx < m_champions)
+    else if (idx < g_champions)
         car.graphics.beginFill(0xb56810);
     else
         car.graphics.beginFill(0x4f6910);
@@ -159,7 +159,7 @@ function generateCar(car, track_data, idx, phys_world, renderer) {
     renderer.stage.addChild(car.graphics);
 
     car.prevOutputs.push(0.5);  // set steering to neutral
-    car.prevOutputs.push(car_max_reverse_accel/(car_max_forward_accel + car_max_reverse_accel));  // throttle to 0
+    car.prevOutputs.push(g_car_max_reverse_accel/(g_car_max_forward_accel + g_car_max_reverse_accel));  // throttle to 0
     car.prevOutputs.push(0);  // standard brake to 0
     car.prevOutputs.push(0);  // e-brake to 0
 }

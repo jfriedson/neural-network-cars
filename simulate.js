@@ -7,10 +7,10 @@ function forwardPropCar(idx, input, cars, gen_algo) {
 
     cars[idx].prevOutputs = output;
 
-    cars[idx].frontWheel.steerValue = ((2 * car_max_steer) * output[0] - car_max_steer);
-    cars[idx].backWheel.engineForce = ((car_max_forward_accel + car_max_reverse_accel) * output[1] - car_max_reverse_accel);
-    cars[idx].frontWheel.setBrakeForce((car_max_std_brake * .65) * output[2]);
-    cars[idx].backWheel.setBrakeForce((car_max_std_brake * .35) * output[2] + (car_max_e_brake * output[3]));
+    cars[idx].frontWheel.steerValue = ((2 * g_car_max_steer) * output[0] - g_car_max_steer);
+    cars[idx].backWheel.engineForce = ((g_car_max_forward_accel + g_car_max_reverse_accel) * output[1] - g_car_max_reverse_accel);
+    cars[idx].frontWheel.setBrakeForce((g_car_max_std_brake * .65) * output[2]);
+    cars[idx].backWheel.setBrakeForce((g_car_max_std_brake * .35) * output[2] + (g_car_max_e_brake * output[3]));
 }
 
 
@@ -35,23 +35,35 @@ function resetCars(app) {
     }
 }
 
+function setCarNotRacingState(app, c) {
+    // slow non-racing car to stop
+    app.cars[c].frontWheel.setBrakeForce(3);
+    app.cars[c].backWheel.setBrakeForce(5);
+    app.cars[c].backWheel.engineForce = 0;
+    // perpendicular wheels & random angular velocity for comedic effect
+    app.cars[c].frontWheel.steerValue = 1.57;
+    app.cars[c].body.angularVelocity = ((2 * Math.random()) - 1) * (Math.abs(app.cars[c].body.angularVelocity) + Math.abs(app.cars[c].body.velocity[0]) + Math.abs(app.cars[c].body.velocity[1]));
+}
+
 function getTimeSincePrevChkpt(app, car_id) {
-    return (app.statTrackingVars.sim_steps - app.cars[car_id].score.times[app.cars[car_id].score.times.length-1])/m_sim_world_fps;
+    const step_diff = app.statTrackingVars.sim_steps - app.cars[car_id].score.times[app.cars[car_id].score.times.length-1];
+    return step_diff/g_phys_iter_per_sec_normal;
 }
 
 
-function setStepIntv(app) {
-    clearInterval(app.sim_step_intv);
+function setPhysIntv(app) {
+    clearInterval(app.phys_intv);
 
-    const m_sim_delay = 1000/m_sim_intv_fps;
+    const phys_iter_per_sec = g_phys_fast_speed ? g_phys_iter_per_sec_fast : g_phys_iter_per_sec_normal;
+    const phys_steps_per_iter = g_phys_fast_speed ? g_phys_steps_per_iter_fast : g_phys_steps_per_iter_normal;
+    
+    const phys_delay = 1000/phys_iter_per_sec;
 
-    if (m_sim_intv_fps == 60)
-        app.sim_step_intv = setInterval(app.stepPhysWorld.bind(app, 1), m_sim_delay);
-    else
-        app.sim_step_intv = setInterval(app.stepPhysWorld.bind(app, 10), m_sim_delay*10);
+    clearInterval(app.phys_intv);
+    app.phys_intv = setInterval(app.stepPhys.bind(app, phys_steps_per_iter), phys_delay);
 }
 
-function simStep(num_steps, app) {
+function stepPhys(num_steps, app) {
     for (var s = 0; s < num_steps; ++s) {
         const now = performance.now();
 
@@ -77,13 +89,17 @@ function simStep(num_steps, app) {
                 var chkpt_time_limit_reached = false;
 
                 // if the car hasn't reached the first checkpoint yet, make sure they are at least moving after a second
-                if (app.cars[c].score.chkpts == 0)
+                if (app.cars[c].score.chkpts == 0) {
                     if (getTimeSincePrevChkpt(app, c) >= 1)
-                        if (Math.abs(app.cars[c].body.velocity[0]) + Math.abs(app.cars[c].body.velocity[1]) < .05)
+                        if (Math.abs(app.cars[c].body.velocity[0]) + Math.abs(app.cars[c].body.velocity[1]) < 5)
                             chkpt_time_limit_reached =  true;
+                }
+                // after a second, take cars out of the race if they stop
+                else if (Math.abs(app.cars[c].body.velocity[0]) + Math.abs(app.cars[c].body.velocity[1]) < .01)
+                    chkpt_time_limit_reached =  true;
 
                 // check if it's hit the normal time limit in any case
-                if (getTimeSincePrevChkpt(app, c) >= time_limit)
+                if (getTimeSincePrevChkpt(app, c) >= g_time_limit)
                     chkpt_time_limit_reached = true;
 
                 if (chkpt_time_limit_reached) {
@@ -100,14 +116,7 @@ function simStep(num_steps, app) {
                     }
 
                     app.cars[c].score.racing = false;
-
-                    // slow non-racing car to stop
-                    app.cars[c].frontWheel.setBrakeForce(3);
-                    app.cars[c].backWheel.setBrakeForce(5);
-                    app.cars[c].backWheel.engineForce = 0;
-                    // perpendicular wheels & random angular velocity for comedic effect
-                    app.cars[c].frontWheel.steerValue = 1.57;
-                    app.cars[c].body.angularVelocity = ((2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1]) / 20;
+                    setCarNotRacingState(app, c);
                 }
             }
 
@@ -159,8 +168,8 @@ function simStep(num_steps, app) {
             resetCars(app);
 
             // run genetic algorithm
-            m_mutation_chance = Math.min(Math.max(.05, m_mutation_chance - (app.gen_algo.generation/10000) + (app.statTrackingVars.record_score_time/10000) + (app.statTrackingVars.record_chkpts_time/10000)), .3);
-            m_learning_rate = Math.min(Math.max(.05, m_learning_rate - (app.gen_algo.generation/10000) + (app.statTrackingVars.record_score_time/10000) + (app.statTrackingVars.record_chkpts_time/10000)), .25);
+            g_mutation_chance = Math.min(Math.max(.05, g_mutation_chance - (app.gen_algo.generation/10000) + (app.statTrackingVars.record_score_time/10000) + (app.statTrackingVars.record_chkpts_time/10000)), .3);
+            g_learning_rate = Math.min(Math.max(.05, g_learning_rate - (app.gen_algo.generation/10000) + (app.statTrackingVars.record_score_time/10000) + (app.statTrackingVars.record_chkpts_time/10000)), .25);
             
             app.gen_algo.BreedPopulation();
 
@@ -203,6 +212,6 @@ function simStep(num_steps, app) {
         }
 
         ++app.statTrackingVars.sim_steps;
-        app.phys_world.step(m_sim_step);
+        app.phys_world.step((1000/60)/1000);
     }
 };

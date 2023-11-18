@@ -50,7 +50,7 @@ function initWorldCollisionEvent(app) {
                                              (app.cars[c].score.chkpts <= 20 || app.cars[c].score.chkpts >= 40));
 
             if (completed_track || score_by_speed_sections)
-                app.cars[c].score.score += time_limit - (app.cars[c].score.times[app.cars[c].score.times.length-1] - app.cars[c].score.times[app.cars[c].score.times.length-2])/m_sim_world_fps;
+                app.cars[c].score.score += g_time_limit - (app.cars[c].score.times[app.cars[c].score.times.length-1] - app.cars[c].score.times[app.cars[c].score.times.length-2])/g_phys_iter_per_sec_normal;
         }
         // wall
         else {
@@ -65,14 +65,7 @@ function initWorldCollisionEvent(app) {
                                                      +(app.cars[c].body.position[1] - app.track.chkpts[app.cars[c].score.chkpts].position[1])**2 );
 
             app.cars[c].score.racing = false;
-
-            // slow non-racing car to stop
-            app.cars[c].frontWheel.setBrakeForce(3);
-            app.cars[c].backWheel.setBrakeForce(5);
-            app.cars[c].backWheel.engineForce = 0;
-            // perpendicular wheels & random angular velocity for comedic effect
-            app.cars[c].frontWheel.steerValue = 1.57;
-            app.cars[c].body.angularVelocity = ((2 * Math.random() - 1) * app.cars[c].body.velocity[0] * app.cars[c].body.velocity[1]) / 10;
+            setCarNotRacingState(app, c);
         }
     });
 }

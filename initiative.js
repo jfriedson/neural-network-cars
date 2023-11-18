@@ -1,18 +1,17 @@
 function initRenderer(app) {
     PIXI.SCALE_MODES.DEFAULT = PIXI.SCALE_MODES.LINEAR;
-    app.renderer = new PIXI.Application({ width: 1600, 
-                                          height: 900,
+    app.renderer = new PIXI.Application({ width: window.innerWidth, 
+                                          height: window.innerHeight,
                                           backgroundColor: 0x060f39,
                                           autoDensity: true,
-                                          resolution: window.devicePixelRatio || 1 });
+                                          resolution: window.devicePixelRatio || 1,
+                                          antialias: true,
+                                          multisample: PIXI.MSAA_QUALITY.MEDIUM });
 
     document.body.appendChild(app.renderer.renderer.view);
     app.renderer.renderer.view.oncontextmenu = function (e) {
         e.preventDefault();
     };
-
-    app.camera_target = 0;
-    app.camera_lerp_alpha = 1;
 }
 
 function initPhysWorld(app) {
@@ -52,7 +51,7 @@ function initCars(app) {
     app.cars = [];
 
     // in this order for best networks drawn in front
-    for(var i = m_car_amt - 1; i >= 0; --i) {
+    for(var i = g_car_amt - 1; i >= 0; --i) {
         var car = { body : null,
                     vehicle : null,
                     graphics : new PIXI.Graphics(),
@@ -85,11 +84,11 @@ function initGraph(app) {
 }
 
 function initGenAlgo(app) {
-    app.gen_algo = new GenAlgo(m_car_amt,
-                               net_input_cnt,
-                               m_hidden_layers,
-                               m_hidden_neurons,
-                               net_output_cnt);
+    app.gen_algo = new GenAlgo(g_car_amt,
+                               g_net_input_cnt,
+                               g_hidden_layers,
+                               g_hidden_neurons,
+                               g_net_output_cnt);
 
     app.gen_algo.GenerateNewPopulation();
 }

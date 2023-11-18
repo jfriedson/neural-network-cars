@@ -1,16 +1,15 @@
-function setAnimIntv(app) {
-    clearInterval(app.animate_intv);
-
-    const m_render_delay = 1000/m_render_fps;
-
-    app.animate_intv = setInterval(app.stepAnimation.bind(app), m_render_delay);
+function setRenderIntv(app) {
+    const render_delay = 1000/g_render_fps;
+    
+    clearInterval(app.render_intv);
+    app.render_intv = setInterval(app.render.bind(app), render_delay);
 }
 
-function animate(app, recenter_camera) {
+function render(app, recenter_camera) {
     const now = performance.now();
 
     // clear records older than a second to easily calculate FPS
-    while (app.statTrackingVars.render_times.length > 0  &&  app.statTrackingVars.render_times[0] <= (now - 1000)) {
+    while ((app.statTrackingVars.render_times.length > 0)  &&  (app.statTrackingVars.render_times[0] <= (now - 1000))) {
         app.statTrackingVars.render_times.shift();
     }
     app.statTrackingVars.render_times.push(now);
@@ -56,52 +55,40 @@ function animate(app, recenter_camera) {
         }
     }
 
-
-    // camera positioning
-    var target_changed = false;
-    if(app.camera_target != best_car) {
-        app.camera_target = best_car;
-        app.camera_lerp_value = 0;
-        target_changed = true;
+    if(app.cameraVars.camera_target != best_car) {
+        app.cameraVars.camera_target = best_car;
+        app.cameraVars.camera_lerp_value = 0;
     }
 
-    const car_pos_x = app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.x * app.cars[best_car].graphics.position.x,
-          car_pos_y = app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.y * app.cars[best_car].graphics.position.y;
+    updateCamera(app, recenter_camera, best_car);
 
-    if (!recenter_camera && (target_changed || (app.camera_lerp_value < 1))) {
-        const cam_dist = Math.sqrt((car_pos_x - app.renderer.stage.position.x)**2 + (car_pos_y - app.renderer.stage.position.y)**2);
-
-        app.camera_lerp_value += 1/m_render_fps + cam_dist/1000000;
-        app.camera_lerp_value = Math.min(app.camera_lerp_value, 1);
-
-        app.renderer.stage.position.x = (1 - app.camera_lerp_value) * app.renderer.stage.position.x + app.camera_lerp_value * car_pos_x;
-        app.renderer.stage.position.y = (1 - app.camera_lerp_value) * app.renderer.stage.position.y + app.camera_lerp_value * car_pos_y;
-    }
-    else {
-        app.renderer.stage.position.x = car_pos_x;
-        app.renderer.stage.position.y = car_pos_y;
-    }
-
+    // UI
+    const UI_res = 2 * app.renderer.renderer.resolution;
+    const UI_center_x =  (app.renderer.renderer.width/UI_res - app.renderer.stage.position.x)/app.renderer.stage.scale.x;
+    const UI_center_y = (app.renderer.renderer.height/UI_res - app.renderer.stage.position.y)/app.renderer.stage.scale.y;
+    const UI_scale_x = 1/(app.renderer.stage.scale.x/app.cameraVars.zoom_base);
+    const UI_scale_y = 1/(app.renderer.stage.scale.y/app.cameraVars.zoom_base);
 
     // scoreboard positioning
-    app.scoreboard.x =  (app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.x)/app.renderer.stage.scale.x - 780/zoom;
-    app.scoreboard.y = (app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.y)/app.renderer.stage.scale.y + 430/zoom;
-    app.scoreboard.scale.x = 1/zoom;
-    app.scoreboard.scale.y = -1/zoom;
+    app.scoreboard.x = UI_center_x - (780 * UI_scale_x);
+    app.scoreboard.y = UI_center_y - (430 * UI_scale_y);
+    app.scoreboard.scale.x = UI_scale_x;
+    app.scoreboard.scale.y = UI_scale_y;
 
     
     // draw neural net graph
     renderGraph(app, best_car);
 
-    app.graph.text.x =  (app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.x)/app.renderer.stage.scale.x + 240/zoom;
-    app.graph.text.y = (app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.y)/app.renderer.stage.scale.y + 430/zoom;
-    app.graph.text.scale.x = 1/zoom;
-    app.graph.text.scale.y = -1/zoom;
+    app.graph.text.x = UI_center_x + (240 * UI_scale_x);
+    app.graph.text.y = UI_center_y - (430 * UI_scale_y);
+    app.graph.text.scale.x = UI_scale_x;
+    app.graph.text.scale.y = UI_scale_y;
 
-    app.graph.graphics.x =  (app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.x)/app.renderer.stage.scale.x + 240/zoom;
-    app.graph.graphics.y = (app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.position.y)/app.renderer.stage.scale.y + 390/zoom;
-    app.graph.graphics.scale.x = 1/zoom;
-    app.graph.graphics.scale.y = -1/zoom;
+    app.graph.graphics.x = UI_center_x + (240 * UI_scale_x);
+    app.graph.graphics.y = UI_center_y - (390 * UI_scale_y);
+    app.graph.graphics.scale.x = UI_scale_x;
+    app.graph.graphics.scale.y = UI_scale_y;
+
 
     app.renderer.renderer.render(app.renderer.stage);
 }
@@ -110,9 +97,46 @@ function animate(app, recenter_camera) {
 // on page load and resize events, used to immediately draw something to the screen
 // in order to eliminate empty screen space
 function renderUpdate(app) {
-    animate(app, true);
+    render(app, true);
 }
 
+// update camera position and zoom
+function updateCamera(app, recenter_camera, best_car) {
+    // camera positioning
+    const car_pos_x =  app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.x * app.cars[best_car].graphics.position.x,
+    car_pos_y = app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.y * app.cars[best_car].graphics.position.y;
+
+    if (recenter_camera || (app.cameraVars.camera_lerp_value == 1)) {
+        app.renderer.stage.position.x = car_pos_x;
+        app.renderer.stage.position.y = car_pos_y;
+    }
+    else {
+        app.renderer.stage.position.x = (1 - app.cameraVars.camera_lerp_value) * app.renderer.stage.position.x + app.cameraVars.camera_lerp_value * car_pos_x;
+        app.renderer.stage.position.y = (1 - app.cameraVars.camera_lerp_value) * app.renderer.stage.position.y + app.cameraVars.camera_lerp_value * car_pos_y;
+        
+        const cam_dist = Math.sqrt((car_pos_x - app.renderer.stage.position.x)**2 + (car_pos_y - app.renderer.stage.position.y)**2);
+        app.cameraVars.camera_lerp_value += 1/g_render_fps + cam_dist/1000000;
+        app.cameraVars.camera_lerp_value = Math.min(app.cameraVars.camera_lerp_value, 1);
+    }
+
+    // camera zoom based on best car speed
+    const car_speed = Math.sqrt(app.cars[best_car].body.velocity[0]**2 + app.cars[best_car].body.velocity[1]**2) / 10;
+    const new_scale = Math.max(1, (app.cameraVars.zoom_base * app.cameraVars.zoom_mod) - car_speed);
+
+    const old_scale_x = app.renderer.stage.scale.x;
+    const old_scale_y = app.renderer.stage.scale.y;
+
+    if (recenter_camera || (app.cameraVars.camera_lerp_value == 1)) {
+        app.renderer.stage.scale.x =  new_scale;
+        app.renderer.stage.scale.y = -new_scale;
+    }
+    else {
+        app.renderer.stage.scale.x = (1 - app.cameraVars.camera_lerp_value) * app.renderer.stage.scale.x + app.cameraVars.camera_lerp_value * new_scale;
+        app.renderer.stage.scale.y = (1 - app.cameraVars.camera_lerp_value) * app.renderer.stage.scale.y - app.cameraVars.camera_lerp_value * new_scale;
+    }
+    app.renderer.stage.position.x -= app.cars[best_car].graphics.position.x * (app.renderer.stage.scale.x - old_scale_x);
+    app.renderer.stage.position.y -= app.cars[best_car].graphics.position.y * (app.renderer.stage.scale.y - old_scale_y);
+}
 
 // neural network graph - draw best performing car neural network activations
 function renderGraph(app, best_car) {
