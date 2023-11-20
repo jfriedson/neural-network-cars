@@ -78,7 +78,6 @@ Lodash - deep cloning ability for genetic algorithm functionality
 
 ## To do
 Use webworkers for computationally intensive loops acting on cars\
-Find fix for interval timers in firefox
 
 ---
 
