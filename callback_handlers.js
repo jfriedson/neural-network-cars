@@ -7,7 +7,10 @@ function initSpeedToggle(app) {
 function toggleSimSpeed(app) {
     g_phys_fast_speed = !g_phys_fast_speed;
 
-    setPhysIntv(app);
+    app.phys_iter_per_sec = g_phys_fast_speed ? g_phys_iter_per_sec_fast : g_phys_iter_per_sec_normal;
+    app.phys_steps_per_iter = g_phys_fast_speed ? g_phys_steps_per_iter_fast : g_phys_steps_per_iter_normal;
+
+    app.phys_delay = 1000/app.phys_iter_per_sec;
 }
 
 
@@ -19,15 +22,13 @@ function setMouseZoomEvent(app) {
         if ((event.deltaX + event.deltaY + event.deltaZ) > 0) {
             if (app.cameraVars.zoom_mod > 1) {
                 app.cameraVars.zoom_mod -= 1;
-                app.cameraVars.camera_lerp_value = 0;
+                app.cameraVars.zoom_lerp_alpha = 0;
             }
         }
-        else if (app.cameraVars.zoom_mod < 20) {
+        else if (app.cameraVars.zoom_mod < 10) {
             app.cameraVars.zoom_mod += 1;
-            app.cameraVars.camera_lerp_value = 0;
+            app.cameraVars.zoom_lerp_alpha = 0;
         }
-
-        renderUpdate(app);
     });
 }
 
@@ -44,24 +45,36 @@ function canvasResize(app) {
 
     app.renderer.renderer.resize(w, h);
 
-    scale_x = w / 1600;
-    scale_y = h / 900;
+    scale_x = w/1600;
+    scale_y = h/900;
 
     if (scale_x < scale_y)
         app.cameraVars.zoom_base = scale_x;
     else
         app.cameraVars.zoom_base = scale_y;
 
-    app.cameraVars.camera_lerp_value = 0;
-
+    zoom_lerp_alpha = 0;
     renderUpdate(app);
 }
 
 function orientationChange(app) {
     window.scrollTo(0, 0);
-    resize(app);
+    canvasResize(app);
     window.scrollTo(0, 0);
     window.scrollTo(0, 0);
+}
+
+
+// reset timers when tab regains focus
+function setFocusEvent(app) {
+    document.addEventListener("visibilitychange", app.onFocusForwarder.bind(app));
+}
+
+function onFocus(e, app) {
+    if (document.visibilityState == "visible") {
+        app.phys_next_time = performance.now();
+        app.render_next_time = performance.now();
+    }
 }
 
 
@@ -100,4 +113,4 @@ function loadPretrainedNet(e, app) {
     resetCars(app);
 
     console.log("neural net restored");
-};
+}

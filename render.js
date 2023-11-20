@@ -1,23 +1,24 @@
-function setRenderIntv(app) {
-    const render_delay = 1000/g_render_fps;
-    
-    clearInterval(app.render_intv);
-    app.render_intv = setInterval(app.render.bind(app), render_delay);
-}
-
-function render(app, recenter_camera) {
+function render(app, spawn_new_timer, recenter_camera) {
     const now = performance.now();
 
-    // clear records older than a second to easily calculate FPS
-    while ((app.statTrackingVars.render_times.length > 0)  &&  (app.statTrackingVars.render_times[0] <= (now - 1000))) {
-        app.statTrackingVars.render_times.shift();
+    if (spawn_new_timer) {
+        const new_delay = Math.max(app.render_delay - (now - app.render_next_time), 0);
+        app.render_timeout = setTimeout(app.render.bind(app), new_delay);
+        app.render_next_time += app.render_delay;
     }
-    app.statTrackingVars.render_times.push(now);
 
-    // update render FPS on scoreboard
-    var text = app.scoreboard.text.split("\n");
-    text[2] = "renderer " + app.statTrackingVars.render_times.length.toString() + "fps";
-    app.scoreboard.text = text.join("\n");
+    // fps calculation
+    ++app.render_frame_cnt;
+    if ((now - app.render_fps_last_update) > 1000) {
+        app.render_fps_last_update = now;
+
+        // update render fps on scoreboard
+        var text = app.scoreboard.text.split("\n");
+        text[2] = "renderer " + app.render_frame_cnt + "fps";
+        app.scoreboard.text = text.join("\n");
+
+        app.render_frame_cnt = 0;
+    }
 
     // draw cars
     for(const c in app.cars) {
@@ -55,11 +56,6 @@ function render(app, recenter_camera) {
         }
     }
 
-    if(app.cameraVars.camera_target != best_car) {
-        app.cameraVars.camera_target = best_car;
-        app.cameraVars.camera_lerp_value = 0;
-    }
-
     updateCamera(app, recenter_camera, best_car);
 
     // UI
@@ -89,7 +85,6 @@ function render(app, recenter_camera) {
     app.graph.graphics.scale.x = UI_scale_x;
     app.graph.graphics.scale.y = UI_scale_y;
 
-
     app.renderer.renderer.render(app.renderer.stage);
 }
 
@@ -97,45 +92,62 @@ function render(app, recenter_camera) {
 // on page load and resize events, used to immediately draw something to the screen
 // in order to eliminate empty screen space
 function renderUpdate(app) {
-    render(app, true);
+    render(app, false, true);
 }
 
 // update camera position and zoom
 function updateCamera(app, recenter_camera, best_car) {
-    // camera positioning
-    const car_pos_x =  app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.x * app.cars[best_car].graphics.position.x,
-    car_pos_y = app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.y * app.cars[best_car].graphics.position.y;
+    if (recenter_camera)
+        app.cameraVars.pos_lerp_alpha = 1;
 
-    if (recenter_camera || (app.cameraVars.camera_lerp_value == 1)) {
-        app.renderer.stage.position.x = car_pos_x;
-        app.renderer.stage.position.y = car_pos_y;
+    if (app.cameraVars.camera_target != best_car) {
+        app.cameraVars.camera_target = best_car;
+        app.cameraVars.pos_lerp_alpha = 0;
+        app.cameraVars.zoom_lerp_alpha = 0;
     }
-    else {
-        app.renderer.stage.position.x = (1 - app.cameraVars.camera_lerp_value) * app.renderer.stage.position.x + app.cameraVars.camera_lerp_value * car_pos_x;
-        app.renderer.stage.position.y = (1 - app.cameraVars.camera_lerp_value) * app.renderer.stage.position.y + app.cameraVars.camera_lerp_value * car_pos_y;
-        
-        const cam_dist = Math.sqrt((car_pos_x - app.renderer.stage.position.x)**2 + (car_pos_y - app.renderer.stage.position.y)**2);
-        app.cameraVars.camera_lerp_value += 1/g_render_fps + cam_dist/1000000;
-        app.cameraVars.camera_lerp_value = Math.min(app.cameraVars.camera_lerp_value, 1);
-    }
-
+    
     // camera zoom based on best car speed
     const car_speed = Math.sqrt(app.cars[best_car].body.velocity[0]**2 + app.cars[best_car].body.velocity[1]**2) / 10;
-    const new_scale = Math.max(1, (app.cameraVars.zoom_base * app.cameraVars.zoom_mod) - car_speed);
+    const new_scale = Math.max(1, (app.cameraVars.zoom_base + app.cameraVars.zoom_mod) - car_speed);
 
     const old_scale_x = app.renderer.stage.scale.x;
     const old_scale_y = app.renderer.stage.scale.y;
 
-    if (recenter_camera || (app.cameraVars.camera_lerp_value == 1)) {
+    if (app.cameraVars.zoom_lerp_alpha == 1) {
         app.renderer.stage.scale.x =  new_scale;
         app.renderer.stage.scale.y = -new_scale;
     }
     else {
-        app.renderer.stage.scale.x = (1 - app.cameraVars.camera_lerp_value) * app.renderer.stage.scale.x + app.cameraVars.camera_lerp_value * new_scale;
-        app.renderer.stage.scale.y = (1 - app.cameraVars.camera_lerp_value) * app.renderer.stage.scale.y - app.cameraVars.camera_lerp_value * new_scale;
+        app.renderer.stage.scale.x = (1 - app.cameraVars.zoom_lerp_alpha) * app.renderer.stage.scale.x + app.cameraVars.zoom_lerp_alpha * new_scale;
+        app.renderer.stage.scale.y = (1 - app.cameraVars.zoom_lerp_alpha) * app.renderer.stage.scale.y - app.cameraVars.zoom_lerp_alpha * new_scale;
+    
+        app.cameraVars.zoom_lerp_alpha += (app.phys_iter_per_sec * app.phys_steps_per_iter)/(app.render_fps*100);
+        app.cameraVars.zoom_lerp_alpha = Math.min(app.cameraVars.zoom_lerp_alpha, 1);
     }
     app.renderer.stage.position.x -= app.cars[best_car].graphics.position.x * (app.renderer.stage.scale.x - old_scale_x);
     app.renderer.stage.position.y -= app.cars[best_car].graphics.position.y * (app.renderer.stage.scale.y - old_scale_y);
+
+    // camera positioning
+    const car_pos_x =  app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.x * app.cars[best_car].graphics.position.x,
+          car_pos_y = app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.y * app.cars[best_car].graphics.position.y;
+
+    if (app.cameraVars.pos_lerp_alpha == 1) {
+        app.renderer.stage.position.x = car_pos_x;
+        app.renderer.stage.position.y = car_pos_y;
+    }
+    else {
+        app.renderer.stage.position.x = (1 - app.cameraVars.pos_lerp_alpha) * app.renderer.stage.position.x + app.cameraVars.pos_lerp_alpha * car_pos_x;
+        app.renderer.stage.position.y = (1 - app.cameraVars.pos_lerp_alpha) * app.renderer.stage.position.y + app.cameraVars.pos_lerp_alpha * car_pos_y;
+        
+        app.cameraVars.pos_lerp_alpha += (app.phys_iter_per_sec * app.phys_steps_per_iter)/(app.render_fps*100);
+        app.cameraVars.pos_lerp_alpha += .5/Math.abs(app.renderer.stage.position.x - car_pos_x);
+        app.cameraVars.pos_lerp_alpha += .5/Math.abs(app.renderer.stage.position.y - car_pos_y);
+        app.cameraVars.pos_lerp_alpha = Math.min(app.cameraVars.pos_lerp_alpha, 1);
+    }
+}
+
+function sortConnActv(a, b) {
+    return a.actv - b.actv;
 }
 
 // neural network graph - draw best performing car neural network activations
@@ -165,6 +177,7 @@ function renderGraph(app, best_car) {
     var layer_in = input;
     for(const l in net.hidden_layers) {
         var layer_out = new Array(net.hidden_layers[l].neurons.length);
+        var conn_activations = new Array(layer_in.length * layer_out.length);
 
         for(const n in net.hidden_layers[l].neurons) {
             layer_out[n] = 0;
@@ -172,41 +185,53 @@ function renderGraph(app, best_car) {
             for(const w in net.hidden_layers[l].neurons[n].weights) {
                 const conn = layer_in[w] * net.hidden_layers[l].neurons[n].weights[w];
                 layer_out[n] += conn;
-
-                const gray = 0xff * Math.min(Math.max(0, conn), 1);
-                app.graph.graphics.lineStyle(2, (gray << 24) + (gray << 16) + gray, 1, .5, true);
-                app.graph.graphics.moveTo(x_offset + l * x_spacing, y_offset + w * y_spacing);
-                app.graph.graphics.lineTo(x_offset + (l + 1) * x_spacing, y_offset + n * y_spacing);
+                conn_activations[(n * layer_in.length) + Number(w)] = {
+                    actv : 0xff * Math.min(Math.max(0, conn), 1),
+                    n : n,
+                    w : w
+                };
             }
 
             const z = net.hidden_layers[l].activation;
             const b = net.hidden_layers[l].neurons[n].bias;
             layer_out[n] = z(layer_out[n] + b);
         }
+        conn_activations.sort(sortConnActv);
+        for(const a in conn_activations) {
+            app.graph.graphics.lineStyle(2, (conn_activations[a].actv << 24) + (conn_activations[a].actv << 16) + conn_activations[a].actv, 1, .5, true);
+            app.graph.graphics.moveTo(x_offset + l * x_spacing, y_offset + conn_activations[a].w * y_spacing);
+            app.graph.graphics.lineTo(x_offset + (l + 1) * x_spacing, y_offset + conn_activations[a].n * y_spacing);
+        }
 
         layer_in = layer_out;
     }
 
     //  draw output weights
-    var output = Array(net.output_layer.neurons);
+    var output = Array(net.output_layer.neurons.length);
+    var conn_activations = new Array(layer_in.length * output.length);
     for(const n in net.output_layer.neurons) {
         output[n] = 0;
 
         for(const w in net.output_layer.neurons[n].weights) {
             const conn = layer_in[w] * net.output_layer.neurons[n].weights[w];
             output[n] += conn;
-
-            const gray = 0xff * Math.min(Math.max(0, conn), 1);
-            app.graph.graphics.lineStyle(2, (gray << 24) + (gray << 16) + gray, 1, .5, true);
-            app.graph.graphics.moveTo(x_offset + net.hidden_layers.length * x_spacing, y_offset + w * y_spacing);
-            app.graph.graphics.lineTo(x_offset + (net.hidden_layers.length + 1) * x_spacing, y_offset + n * y_spacing);
+            conn_activations[(n * layer_in.length) + Number(w)] = {
+                actv : 0xff * Math.min(Math.max(0, conn), 1),
+                n : n,
+                w : w
+            };
         }
 
         const z = net.output_layer.activation;
         const b = net.output_layer.neurons[n].bias;
         output[n] = z(output[n] + b);
     }
-
+    conn_activations.sort(sortConnActv);
+    for(const a in conn_activations) {
+        app.graph.graphics.lineStyle(2, (conn_activations[a].actv << 24) + (conn_activations[a].actv << 16) + conn_activations[a].actv, 1, .5, true);
+        app.graph.graphics.moveTo(x_offset + net.hidden_layers.length * x_spacing, y_offset + conn_activations[a].w * y_spacing);
+        app.graph.graphics.lineTo(x_offset + (net.hidden_layers.length + 1) * x_spacing, y_offset + conn_activations[a].n * y_spacing);
+    }
 
     // input neurons
     app.graph.graphics.lineStyle(0, 0, 0, .5, false);

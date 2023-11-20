@@ -15,10 +15,11 @@ function forwardPropCar(idx, input, cars, gen_algo) {
 
 
 function resetCars(app) {
+    app.statTrackingVars.sim_steps = 0;
     for (c in app.cars) {
         app.cars[c].score = { racing: true,
                               chkpts : 0,
-                              times : [app.statTrackingVars.sim_steps],
+                              times : [0],
                               score : 0 };
 
         app.cars[c].body.position = [ app.track_data.start[0],
@@ -51,39 +52,34 @@ function getTimeSincePrevChkpt(app, car_id) {
 }
 
 
-function setPhysIntv(app) {
-    clearInterval(app.phys_intv);
-
-    const phys_iter_per_sec = g_phys_fast_speed ? g_phys_iter_per_sec_fast : g_phys_iter_per_sec_normal;
-    const phys_steps_per_iter = g_phys_fast_speed ? g_phys_steps_per_iter_fast : g_phys_steps_per_iter_normal;
-    
-    const phys_delay = 1000/phys_iter_per_sec;
-
-    clearInterval(app.phys_intv);
-    app.phys_intv = setInterval(app.stepPhys.bind(app, phys_steps_per_iter), phys_delay);
-}
-
 function stepPhys(num_steps, app) {
+    const new_delay = Math.max(app.phys_delay - (performance.now() - app.phys_next_time), 0);
+    app.phys_timeout = setTimeout(app.stepPhys.bind(app, app.phys_steps_per_iter), new_delay);
+    app.phys_next_time += app.phys_delay;
+    
+    app.stepPhys.bind(app, app.phys_steps_per_iter);
+
+    var text = app.scoreboard.text.split("\n");
+    
     for (var s = 0; s < num_steps; ++s) {
         const now = performance.now();
 
-        // clear records older than a second to easily calculate FPS
-        while ((app.statTrackingVars.sim_times.length > 0) && (app.statTrackingVars.sim_times[0] <= (now - 1000))) {
-            app.statTrackingVars.sim_times.shift();
-        }
-        app.statTrackingVars.sim_times.push(now);
+        // ips calculation
+        ++app.phys_iter_cnt;
+        if (now - app.phys_ips_last_update > 1000) {
+            app.phys_ips_last_update = now;
 
-        // update simulation FPS on scoreboard
-        var text = app.scoreboard.text.split("\n");
-        text[1] = "world " + app.statTrackingVars.sim_times.length.toString() + "fps";
-        app.scoreboard.text = text.join("\n");
+            // update simulation ips on scoreboard
+            text[1] = "physics " + app.phys_iter_cnt + "ips";
+            app.scoreboard.text = text.join("\n");
+
+            app.phys_iter_cnt = 0;
+        }
         
+        var racing = 0;  // the number of cars still racing
+
         // check if cars have run out of time, if so reward them
         // otherwise run inputs through the neural network
-        var racing = 0;  // count the number of cars still racing
-
-        
-        // check if living cars have reached the time limits	
         for (const c in app.cars) {		
             if (app.cars[c].score.racing) {
                 var chkpt_time_limit_reached = false;
@@ -91,7 +87,7 @@ function stepPhys(num_steps, app) {
                 // if the car hasn't reached the first checkpoint yet, make sure they are at least moving after a second
                 if (app.cars[c].score.chkpts == 0) {
                     if (getTimeSincePrevChkpt(app, c) >= 1)
-                        if (Math.abs(app.cars[c].body.velocity[0]) + Math.abs(app.cars[c].body.velocity[1]) < 5)
+                        if (Math.abs(app.cars[c].body.velocity[0]) + Math.abs(app.cars[c].body.velocity[1]) < 3)
                             chkpt_time_limit_reached =  true;
                 }
                 // after a second, take cars out of the race if they stop
@@ -198,7 +194,7 @@ function stepPhys(num_steps, app) {
                     for (var i = 6; i < 11; ++i)
                         text[i] = text[i+1];
 
-                    text[text.length-1] = app.statTrackingVars.record_score.toFixed(3) + " at gen " + (app.gen_algo.generation - 1);
+                    text[10] = app.statTrackingVars.record_score.toFixed(3) + " at gen " + (app.gen_algo.generation - 1);
                 }
                 else
                     text.push(app.statTrackingVars.record_score.toFixed(3) + " at gen " + (app.gen_algo.generation-1));
@@ -206,9 +202,11 @@ function stepPhys(num_steps, app) {
             else
                 app.statTrackingVars.record_score_time++;
 
-            //var text = scoreboard.text.split("\n");
             text[4] = "Generation " + app.gen_algo.generation;
             app.scoreboard.text = text.join("\n");
+
+            // reset camera
+            app.cameraVars.camera_target = -1;
         }
 
         ++app.statTrackingVars.sim_steps;

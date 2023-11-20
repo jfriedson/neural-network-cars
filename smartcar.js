@@ -7,24 +7,35 @@ const SmartCarApp = class {
             // best network achievements - used to adjust the learning rate
             record_chkpts : 0,
             record_chkpts_time : 0,
-            record_score : Number.MIN_SAFE_INTEGER,
-            record_score_time : 0,
-
-            // used for tracking and printing simulation and frame rates
-            sim_times : [],
-            render_times : []
+            record_score : 0,
+            record_score_time : 0
         }
 
         this.cameraVars = {
             camera_target : 0,
-            camera_lerp_alpha : 1,
+            pos_lerp_alpha : 1,
+            zoom_lerp_alpha : 1,
             zoom_base : 0,
-            zoom_mod : 18
+            zoom_mod : 10
         }
 
-        // phys and render interval timers
-        this.phys_intv = null;
-        this.render_intv = null;
+        // looping vars
+        this.phys_iter_per_sec = 60;
+        this.phys_steps_per_iter = 1;
+        this.phys_delay = 1000/this.phys_iter_per_sec;
+        this.phys_next_time = 0;
+        this.phys_timeout = null;
+
+        this.render_fps = 40;
+        this.render_delay = 1000/this.render_fps;
+        this.render_next_time = 0;
+        this.render_timeout = null;
+
+        // used for tracking and printing loop rates
+        this.phys_ips_last_update = 0;
+        this.phys_iter_cnt = 0;
+        this.render_fps_last_update = 0;
+        this.render_frame_cnt = 0;
 
         // construct objects physical bodies and render objects
         initRenderer(this);
@@ -45,11 +56,12 @@ const SmartCarApp = class {
         setMouseZoomEvent(this);
         setResizeEvents(this);
         setCopyLoadEvents(this);
+        setFocusEvent(this);
 
         canvasResize(this);
 
-        setPhysIntv(this);
-        setRenderIntv(this);
+        this.stepPhys(this.phys_steps_per_iter);
+        this.render();
     }
 
     // the below callback handlers forward event handling to global methods
@@ -58,12 +70,13 @@ const SmartCarApp = class {
 
     canvasResizeForwarder() { canvasResize(this); }
     orientationChangeForwarder() { orientationChange(this); }
+    onFocusForwarder(e) { onFocus(e, this); }
     
     saveNetForwarder(e) { saveNet(e, this); }
     loadNetForwarder(e) { loadNet(e, this); }
     loadPretrainedNetForwarder(e) { loadPretrainedNet(e, this); }
 
-    render() { render(this, false); }
+    render() { render(this, true, false); }
     stepPhys(num_steps) { stepPhys(num_steps, this); }
 }
 
