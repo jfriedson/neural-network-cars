@@ -1,7 +1,7 @@
 # Neural Network-Driven Cars Trained by a Genetic Algorithm
 This project demonstrates the process of using genetic algorithms to breed and mutate neural networks with the goal of navigating cars through a race track as quickly as possible.
 
-You can see the live demo at my website: https://JoshFriedson.com/projects/smart_car
+You can see the live demo at my website: https://JoshFriedson.com/projects/genetic_cars
 
 ![Demo screenshot](demo.png?raw=true)
 
