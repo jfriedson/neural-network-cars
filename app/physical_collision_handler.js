@@ -40,17 +40,17 @@ function initWorldCollisionEvent(app) {
                 return;
 
             ++app.cars[c].score.chkpts;
-            app.cars[c].score.times.push(app.statTrackingVars.sim_steps);
+            app.cars[c].score.times.push(app.timeTracking.sim_steps);
             app.cars[c].score.score += 100;
 
             // only reward for time during relatively straight sections of track until track is completed
             // in order to improve learning of tight turns
-            const completed_track = (app.statTrackingVars.record_chkpts == app.track.chkpts.length);
+            const completed_track = (app.recordKeeping.chkpts == app.track.chkpts.length);
             const score_by_speed_sections = ((app.cars[c].score.chkpts <= 2 || app.cars[c].score.chkpts >= 8) &&
                                              (app.cars[c].score.chkpts <= 20 || app.cars[c].score.chkpts >= 40));
 
             if (completed_track || score_by_speed_sections)
-                app.cars[c].score.score += g_time_limit - (app.cars[c].score.times[app.cars[c].score.times.length-1] - app.cars[c].score.times[app.cars[c].score.times.length-2])/g_phys_iter_per_sec_normal;
+                app.cars[c].score.score += app.constant.sim.time_limit - (app.cars[c].score.times[app.cars[c].score.times.length-1] - app.cars[c].score.times[app.cars[c].score.times.length-2])/app.loopControl.phys.iter_per_sec_normal;
         }
         // wall
         else {

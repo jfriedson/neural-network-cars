@@ -2,22 +2,22 @@ function render(app, spawn_new_timer, recenter_camera) {
     const now = performance.now();
 
     if (spawn_new_timer) {
-        const new_delay = Math.max(app.render_delay - (now - app.render_next_time), 0);
-        app.render_timeout = setTimeout(app.render.bind(app), new_delay);
-        app.render_next_time += app.render_delay;
+        const new_delay = Math.max(app.loopControl.render.delay - (now - app.loopControl.render.next_time), 0);
+        app.loopControl.render.timeout = setTimeout(app.render.bind(app), new_delay);
+        app.loopControl.render.next_time += app.loopControl.render.delay;
     }
 
     // fps calculation
-    ++app.render_frame_cnt;
-    if ((now - app.render_fps_last_update) > 1000) {
-        app.render_fps_last_update = now;
+    ++app.loopControl.render.frame_cnt;
+    if ((now - app.loopControl.render.fps_last_update) > 1000) {
+        app.loopControl.render.fps_last_update = now;
 
         // update render fps on scoreboard
         var text = app.scoreboard.text.split("\n");
-        text[2] = "renderer " + app.render_frame_cnt + "fps";
+        text[2] = "renderer " + app.loopControl.render.frame_cnt + "fps";
         app.scoreboard.text = text.join("\n");
 
-        app.render_frame_cnt = 0;
+        app.loopControl.render.frame_cnt = 0;
     }
 
     // draw cars
@@ -62,8 +62,8 @@ function render(app, spawn_new_timer, recenter_camera) {
     const UI_res = 2 * app.renderer.renderer.resolution;
     const UI_center_x =  (app.renderer.renderer.width/UI_res - app.renderer.stage.position.x)/app.renderer.stage.scale.x;
     const UI_center_y = (app.renderer.renderer.height/UI_res - app.renderer.stage.position.y)/app.renderer.stage.scale.y;
-    const UI_scale_x = 1/(app.renderer.stage.scale.x/app.cameraVars.zoom_base);
-    const UI_scale_y = 1/(app.renderer.stage.scale.y/app.cameraVars.zoom_base);
+    const UI_scale_x = 1/(app.renderer.stage.scale.x/app.cameraControl.zoom_base);
+    const UI_scale_y = 1/(app.renderer.stage.scale.y/app.cameraControl.zoom_base);
 
     // scoreboard positioning
     app.scoreboard.x = UI_center_x - (780 * UI_scale_x);
@@ -98,31 +98,31 @@ function renderUpdate(app) {
 // update camera position and zoom
 function updateCamera(app, recenter_camera, best_car) {
     if (recenter_camera)
-        app.cameraVars.pos_lerp_alpha = 1;
+        app.cameraControl.pos_lerp_alpha = 1;
 
-    if (app.cameraVars.camera_target != best_car) {
-        app.cameraVars.camera_target = best_car;
-        app.cameraVars.pos_lerp_alpha = 0;
-        app.cameraVars.zoom_lerp_alpha = 0;
+    if (app.cameraControl.camera_target != best_car) {
+        app.cameraControl.camera_target = best_car;
+        app.cameraControl.pos_lerp_alpha = 0;
+        app.cameraControl.zoom_lerp_alpha = 0;
     }
     
     // camera zoom based on best car speed
     const car_speed = Math.sqrt(app.cars[best_car].body.velocity[0]**2 + app.cars[best_car].body.velocity[1]**2) / 10;
-    const new_scale = Math.max(1, (app.cameraVars.zoom_base + app.cameraVars.zoom_mod) - car_speed);
+    const new_scale = Math.max(1, (-1/app.cameraControl.zoom_base) + app.cameraControl.zoom_mod - (car_speed*app.cameraControl.zoom_base));
 
     const old_scale_x = app.renderer.stage.scale.x;
     const old_scale_y = app.renderer.stage.scale.y;
 
-    if (app.cameraVars.zoom_lerp_alpha == 1) {
+    if (app.cameraControl.zoom_lerp_alpha == 1) {
         app.renderer.stage.scale.x =  new_scale;
         app.renderer.stage.scale.y = -new_scale;
     }
     else {
-        app.renderer.stage.scale.x = (1 - app.cameraVars.zoom_lerp_alpha) * app.renderer.stage.scale.x + app.cameraVars.zoom_lerp_alpha * new_scale;
-        app.renderer.stage.scale.y = (1 - app.cameraVars.zoom_lerp_alpha) * app.renderer.stage.scale.y - app.cameraVars.zoom_lerp_alpha * new_scale;
+        app.renderer.stage.scale.x = (1 - app.cameraControl.zoom_lerp_alpha) * app.renderer.stage.scale.x + app.cameraControl.zoom_lerp_alpha * new_scale;
+        app.renderer.stage.scale.y = (1 - app.cameraControl.zoom_lerp_alpha) * app.renderer.stage.scale.y - app.cameraControl.zoom_lerp_alpha * new_scale;
     
-        app.cameraVars.zoom_lerp_alpha += (app.phys_iter_per_sec * app.phys_steps_per_iter)/(app.render_fps*100);
-        app.cameraVars.zoom_lerp_alpha = Math.min(app.cameraVars.zoom_lerp_alpha, 1);
+        app.cameraControl.zoom_lerp_alpha += (app.loopControl.phys.iter_per_sec * app.loopControl.phys.steps_per_iter)/(app.loopControl.render.fps*200);
+        app.cameraControl.zoom_lerp_alpha = Math.min(app.cameraControl.zoom_lerp_alpha, 1);
     }
     app.renderer.stage.position.x -= app.cars[best_car].graphics.position.x * (app.renderer.stage.scale.x - old_scale_x);
     app.renderer.stage.position.y -= app.cars[best_car].graphics.position.y * (app.renderer.stage.scale.y - old_scale_y);
@@ -131,18 +131,18 @@ function updateCamera(app, recenter_camera, best_car) {
     const car_pos_x =  app.renderer.renderer.width/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.x * app.cars[best_car].graphics.position.x,
           car_pos_y = app.renderer.renderer.height/(2 * app.renderer.renderer.resolution) - app.renderer.stage.scale.y * app.cars[best_car].graphics.position.y;
 
-    if (app.cameraVars.pos_lerp_alpha == 1) {
+    if (app.cameraControl.pos_lerp_alpha == 1) {
         app.renderer.stage.position.x = car_pos_x;
         app.renderer.stage.position.y = car_pos_y;
     }
     else {
-        app.renderer.stage.position.x = (1 - app.cameraVars.pos_lerp_alpha) * app.renderer.stage.position.x + app.cameraVars.pos_lerp_alpha * car_pos_x;
-        app.renderer.stage.position.y = (1 - app.cameraVars.pos_lerp_alpha) * app.renderer.stage.position.y + app.cameraVars.pos_lerp_alpha * car_pos_y;
+        app.renderer.stage.position.x = (1 - app.cameraControl.pos_lerp_alpha) * app.renderer.stage.position.x + app.cameraControl.pos_lerp_alpha * car_pos_x;
+        app.renderer.stage.position.y = (1 - app.cameraControl.pos_lerp_alpha) * app.renderer.stage.position.y + app.cameraControl.pos_lerp_alpha * car_pos_y;
         
-        app.cameraVars.pos_lerp_alpha += (app.phys_iter_per_sec * app.phys_steps_per_iter)/(app.render_fps*100);
-        app.cameraVars.pos_lerp_alpha += .5/Math.abs(app.renderer.stage.position.x - car_pos_x);
-        app.cameraVars.pos_lerp_alpha += .5/Math.abs(app.renderer.stage.position.y - car_pos_y);
-        app.cameraVars.pos_lerp_alpha = Math.min(app.cameraVars.pos_lerp_alpha, 1);
+        app.cameraControl.pos_lerp_alpha += (app.loopControl.phys.iter_per_sec * app.loopControl.phys.steps_per_iter)/(app.loopControl.render.fps*100);
+        app.cameraControl.pos_lerp_alpha += .1/Math.abs(app.renderer.stage.position.x - car_pos_x);
+        app.cameraControl.pos_lerp_alpha += .1/Math.abs(app.renderer.stage.position.y - car_pos_y);
+        app.cameraControl.pos_lerp_alpha = Math.min(app.cameraControl.pos_lerp_alpha, 1);
     }
 }
 

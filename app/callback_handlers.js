@@ -5,12 +5,14 @@ function initSpeedToggle(app) {
 }
 
 function toggleSimSpeed(app) {
-    g_phys_fast_speed = !g_phys_fast_speed;
+    app.loopControl.sim_fast_speed = !app.loopControl.sim_fast_speed;
 
-    app.phys_iter_per_sec = g_phys_fast_speed ? g_phys_iter_per_sec_fast : g_phys_iter_per_sec_normal;
-    app.phys_steps_per_iter = g_phys_fast_speed ? g_phys_steps_per_iter_fast : g_phys_steps_per_iter_normal;
+    app.loopControl.render.fps = app.loopControl.sim_fast_speed ? app.loopControl.render.fps_fast : app.loopControl.render.fps_normal;
+    app.loopControl.phys.iter_per_sec = app.loopControl.sim_fast_speed ? app.loopControl.phys.iter_per_sec_fast : app.loopControl.phys.iter_per_sec_normal;
+    app.loopControl.phys.steps_per_iter = app.loopControl.sim_fast_speed ? app.loopControl.phys.steps_per_iter_fast : app.loopControl.phys.steps_per_iter_normal;
 
-    app.phys_delay = 1000/app.phys_iter_per_sec;
+    app.loopControl.render.delay = 1000/app.loopControl.render.fps;
+    app.loopControl.phys.delay = 1000/app.loopControl.phys.iter_per_sec;
 }
 
 
@@ -20,14 +22,14 @@ function setMouseZoomEvent(app) {
         event.preventDefault();
 
         if ((event.deltaX + event.deltaY + event.deltaZ) > 0) {
-            if (app.cameraVars.zoom_mod > 1) {
-                app.cameraVars.zoom_mod -= 1;
-                app.cameraVars.zoom_lerp_alpha = 0;
+            if (app.cameraControl.zoom_mod > 1) {
+                app.cameraControl.zoom_mod -= 1;
+                app.cameraControl.zoom_lerp_alpha = 0;
             }
         }
-        else if (app.cameraVars.zoom_mod < 10) {
-            app.cameraVars.zoom_mod += 1;
-            app.cameraVars.zoom_lerp_alpha = 0;
+        else if (app.cameraControl.zoom_mod < 10) {
+            app.cameraControl.zoom_mod += 1;
+            app.cameraControl.zoom_lerp_alpha = 0;
         }
     });
 }
@@ -48,10 +50,7 @@ function canvasResize(app) {
     scale_x = w/1600;
     scale_y = h/900;
 
-    if (scale_x < scale_y)
-        app.cameraVars.zoom_base = scale_x;
-    else
-        app.cameraVars.zoom_base = scale_y;
+    app.cameraControl.zoom_base = (scale_x < scale_y) ? scale_x : scale_y;
 
     zoom_lerp_alpha = 0;
     renderUpdate(app);
@@ -72,8 +71,8 @@ function setFocusEvent(app) {
 
 function onFocus(e, app) {
     if (document.visibilityState == "visible") {
-        app.phys_next_time = performance.now();
-        app.render_next_time = performance.now();
+        app.loopControl.phys.next_time = performance.now();
+        app.loopControl.render.next_time = performance.now();
     }
 }
 
@@ -82,7 +81,9 @@ function onFocus(e, app) {
 function setCopyLoadEvents(app) {
     window.addEventListener("copy", app.saveNetForwarder.bind(app));
     window.addEventListener("paste", app.loadNetForwarder.bind(app));
-    parent.document.getElementById("pretrained").addEventListener("click", app.loadPretrainedNetForwarder.bind(app));
+    var pretrainedButton = parent.document.getElementById("pretrained");
+    if (pretrainedButton !== null)
+        pretrainedButton.addEventListener("click", app.loadPretrainedNetForwarder.bind(app));
 }
 
 function saveNet(e, app) {

@@ -1,17 +1,18 @@
 const SmartCarApp = class {
     constructor() {
-        this.statTrackingVars = {
-            start_time : performance.now(),		// used for printing length of time for new records
-            sim_steps : 0,						// number of world steps since page load
-
-            // best network achievements - used to adjust the learning rate
-            record_chkpts : 0,
-            record_chkpts_time : 0,
-            record_score : 0,
-            record_score_time : 0
+        this.timeTracking = {
+            start_time : 0, // used for printing length of time for new records
+            sim_steps : 0   // number of world steps since page load
         }
 
-        this.cameraVars = {
+        this.recordKeeping = {
+            chkpts : 0,
+            chkpts_time : 0,
+            score : 0,
+            score_time : 0
+        }
+
+        this.cameraControl = {
             camera_target : 0,
             pos_lerp_alpha : 1,
             zoom_lerp_alpha : 1,
@@ -19,23 +20,55 @@ const SmartCarApp = class {
             zoom_mod : 10
         }
 
-        // looping vars
-        this.phys_iter_per_sec = 60;
-        this.phys_steps_per_iter = 1;
-        this.phys_delay = 1000/this.phys_iter_per_sec;
-        this.phys_next_time = 0;
-        this.phys_timeout = null;
+        this.constant = {
+            sim : {
+                time_limit : 7,
+                car_amt : 30,
+                champions : 3
+            },
+            neuralNet : {
+                input_cnt : 13,
+                output_cnt : 4,
+                hidden_layers : 1,
+                hidden_neurons : 10
+            },
+            carControl : {
+                max_steer : 0.53,
+                max_forward_accel : 12,
+                max_reverse_accel : 5,
+                max_std_brake : 15,
+                max_e_brake : 8
+            }
+        }
 
-        this.render_fps = 40;
-        this.render_delay = 1000/this.render_fps;
-        this.render_next_time = 0;
-        this.render_timeout = null;
+        this.loopControl = {
+            sim_fast_speed : false,
 
-        // used for tracking and printing loop rates
-        this.phys_ips_last_update = 0;
-        this.phys_iter_cnt = 0;
-        this.render_fps_last_update = 0;
-        this.render_frame_cnt = 0;
+            phys : {
+                iter_per_sec_normal: 60,
+                steps_per_iter_normal : 1,
+                iter_per_sec_fast : 100,
+                steps_per_iter_fast : 10,
+                iter_per_sec : 60,
+                steps_per_iter : 1,
+                delay : 1000/60,
+                next_time : performance.now(),
+                timeout : null,
+                ips_last_update : 0,
+                iter_cnt : 0,
+            },
+
+            render: {
+                fps_normal : 60,
+                fps_fast : 30,
+                fps : 60,
+                delay : 1000/60,
+                next_time : performance.now(),
+                timeout : null,
+                fps_last_update : 0,
+                frame_cnt : 0
+            },
+        }
 
         // construct objects physical bodies and render objects
         initRenderer(this);

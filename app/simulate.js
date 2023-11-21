@@ -2,20 +2,20 @@
 // 4 outputs: steerings angle, gas throttle, standard brakes pressure, handbrake pressure
 // every car has a NN + score (# of chkpts, time between each chkpt)
 // the genetical algo does mutation+crossover of NNs based on score; reset cars
-function forwardPropCar(idx, input, cars, gen_algo) {
+function forwardPropCar(idx, input, cars, gen_algo, app) {
     const output = gen_algo.infer(idx, input);
 
     cars[idx].prevOutputs = output;
 
-    cars[idx].frontWheel.steerValue = ((2 * g_car_max_steer) * output[0] - g_car_max_steer);
-    cars[idx].backWheel.engineForce = ((g_car_max_forward_accel + g_car_max_reverse_accel) * output[1] - g_car_max_reverse_accel);
-    cars[idx].frontWheel.setBrakeForce((g_car_max_std_brake * .65) * output[2]);
-    cars[idx].backWheel.setBrakeForce((g_car_max_std_brake * .35) * output[2] + (g_car_max_e_brake * output[3]));
+    cars[idx].frontWheel.steerValue = ((2 * app.constant.carControl.max_steer) * output[0] - app.constant.carControl.max_steer);
+    cars[idx].backWheel.engineForce = ((app.constant.carControl.max_forward_accel + app.constant.carControl.max_reverse_accel) * output[1] - app.constant.carControl.max_reverse_accel);
+    cars[idx].frontWheel.setBrakeForce((app.constant.carControl.max_std_brake * .65) * output[2]);
+    cars[idx].backWheel.setBrakeForce((app.constant.carControl.max_std_brake * .35) * output[2] + (app.constant.carControl.max_e_brake * output[3]));
 }
 
 
 function resetCars(app) {
-    app.statTrackingVars.sim_steps = 0;
+    app.timeTracking.sim_steps = 0;
     for (c in app.cars) {
         app.cars[c].score = { racing: true,
                               chkpts : 0,
@@ -47,17 +47,17 @@ function setCarNotRacingState(app, c) {
 }
 
 function getTimeSincePrevChkpt(app, car_id) {
-    const step_diff = app.statTrackingVars.sim_steps - app.cars[car_id].score.times[app.cars[car_id].score.times.length-1];
-    return step_diff/g_phys_iter_per_sec_normal;
+    const step_diff = app.timeTracking.sim_steps - app.cars[car_id].score.times[app.cars[car_id].score.times.length-1];
+    return step_diff/app.loopControl.phys.iter_per_sec_normal;
 }
 
 
 function stepPhys(num_steps, app) {
-    const new_delay = Math.max(app.phys_delay - (performance.now() - app.phys_next_time), 0);
-    app.phys_timeout = setTimeout(app.stepPhys.bind(app, app.phys_steps_per_iter), new_delay);
-    app.phys_next_time += app.phys_delay;
+    const new_delay = Math.max(app.loopControl.phys.delay - (performance.now() - app.loopControl.phys.next_time), 0);
+    app.loopControl.phys.timeout = setTimeout(app.stepPhys.bind(app, app.loopControl.phys.steps_per_iter), new_delay);
+    app.loopControl.phys.next_time += app.loopControl.phys.delay;
     
-    app.stepPhys.bind(app, app.phys_steps_per_iter);
+    app.stepPhys.bind(app, app.loopControl.phys.steps_per_iter);
 
     var text = app.scoreboard.text.split("\n");
     
@@ -65,15 +65,15 @@ function stepPhys(num_steps, app) {
         const now = performance.now();
 
         // ips calculation
-        ++app.phys_iter_cnt;
-        if (now - app.phys_ips_last_update > 1000) {
-            app.phys_ips_last_update = now;
+        ++app.loopControl.phys.iter_cnt;
+        if (now - app.loopControl.phys.ips_last_update > 1000) {
+            app.loopControl.phys.ips_last_update = now;
 
             // update simulation ips on scoreboard
-            text[1] = "physics " + app.phys_iter_cnt + "ips";
+            text[1] = "physics " + app.loopControl.phys.iter_cnt + "ips";
             app.scoreboard.text = text.join("\n");
 
-            app.phys_iter_cnt = 0;
+            app.loopControl.phys.iter_cnt = 0;
         }
         
         var racing = 0;  // the number of cars still racing
@@ -95,7 +95,7 @@ function stepPhys(num_steps, app) {
                     chkpt_time_limit_reached =  true;
 
                 // check if it's hit the normal time limit in any case
-                if (getTimeSincePrevChkpt(app, c) >= g_time_limit)
+                if (getTimeSincePrevChkpt(app, c) >= app.constant.sim.time_limit)
                     chkpt_time_limit_reached = true;
 
                 if (chkpt_time_limit_reached) {
@@ -142,7 +142,7 @@ function stepPhys(num_steps, app) {
                     input.push(ray_dist);
                 }
 
-                forwardPropCar(c, input, app.cars, app.gen_algo);
+                forwardPropCar(c, input, app.cars, app.gen_algo, app);
                 ++racing;
             }
         }
@@ -164,27 +164,25 @@ function stepPhys(num_steps, app) {
             resetCars(app);
 
             // run genetic algorithm
-            g_mutation_chance = Math.min(Math.max(.05, g_mutation_chance - (app.gen_algo.generation/10000) + (app.statTrackingVars.record_score_time/10000) + (app.statTrackingVars.record_chkpts_time/10000)), .3);
-            g_learning_rate = Math.min(Math.max(.05, g_learning_rate - (app.gen_algo.generation/10000) + (app.statTrackingVars.record_score_time/10000) + (app.statTrackingVars.record_chkpts_time/10000)), .25);
-            
+            app.gen_algo.updateParams(app.recordKeeping);
             app.gen_algo.BreedPopulation();
 
             // update checkpoint record
-            if (best_chkpt > app.statTrackingVars.record_chkpts) {
-                app.statTrackingVars.record_chkpts = best_chkpt;
-                app.statTrackingVars.record_chkpts_time = 0;
+            if (best_chkpt > app.recordKeeping.chkpts) {
+                app.recordKeeping.chkpts = best_chkpt;
+                app.recordKeeping.chkpts_time = 0;
             }
             else
-                app.statTrackingVars.record_chkpts_time++;
+                app.recordKeeping.chkpts_time++;
             
             // update checkpoint record
-            if (best_score > app.statTrackingVars.record_score) {
-                app.statTrackingVars.record_score = best_score;
-                app.statTrackingVars.record_score_time = 0;
+            if (best_score > app.recordKeeping.score) {
+                app.recordKeeping.score = best_score;
+                app.recordKeeping.score_time = 0;
 
                 // log to console and scoreboard in the case of a new high score
-                var time_diff = performance.now() - app.statTrackingVars.start_time;
-                console.log("New record of " + app.statTrackingVars.record_score.toFixed(3) +
+                var time_diff = performance.now() - app.timeTracking.start_time;
+                console.log("New record of " + app.recordKeeping.score.toFixed(3) +
                             " in gen " + (app.gen_algo.generation-1) +
                             " at " + Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric'}).format(Date.now()) +
                             " after " + Math.floor(time_diff/1440000) + "h " + Math.floor(time_diff/60000)%60 + "m " + Math.floor(time_diff/1000)%60 + "s");
@@ -194,22 +192,22 @@ function stepPhys(num_steps, app) {
                     for (var i = 6; i < 11; ++i)
                         text[i] = text[i+1];
 
-                    text[10] = app.statTrackingVars.record_score.toFixed(3) + " at gen " + (app.gen_algo.generation - 1);
+                    text[10] = app.recordKeeping.score.toFixed(3) + " at gen " + (app.gen_algo.generation - 1);
                 }
                 else
-                    text.push(app.statTrackingVars.record_score.toFixed(3) + " at gen " + (app.gen_algo.generation-1));
+                    text.push(app.recordKeeping.score.toFixed(3) + " at gen " + (app.gen_algo.generation-1));
             }
             else
-                app.statTrackingVars.record_score_time++;
+                app.recordKeeping.score_time++;
 
             text[4] = "Generation " + app.gen_algo.generation;
             app.scoreboard.text = text.join("\n");
 
             // reset camera
-            app.cameraVars.camera_target = -1;
+            app.cameraControl.camera_target = -1;
         }
 
-        ++app.statTrackingVars.sim_steps;
+        ++app.timeTracking.sim_steps;
         app.phys_world.step((1000/60)/1000);
     }
 };

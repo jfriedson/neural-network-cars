@@ -51,7 +51,7 @@ function initCars(app) {
     app.cars = [];
 
     // in this order for best networks drawn in front
-    for(var i = g_car_amt - 1; i >= 0; --i) {
+    for(var i = app.constant.sim.car_amt - 1; i >= 0; --i) {
         var car = { body : null,
                     vehicle : null,
                     graphics : new PIXI.Graphics(),
@@ -65,7 +65,7 @@ function initCars(app) {
                               score : 0 } };
 
         app.cars.unshift(car);
-        generateCar(car, app.track_data, i, app.phys_world, app.renderer);
+        generateCar(car, app.track_data, i, app.constant.sim.champions, app.phys_world, app.renderer, app.constant.carControl);
     }
 }
 
@@ -84,11 +84,12 @@ function initGraph(app) {
 }
 
 function initGenAlgo(app) {
-    app.gen_algo = new GenAlgo(g_car_amt,
-                               g_net_input_cnt,
-                               g_hidden_layers,
-                               g_hidden_neurons,
-                               g_net_output_cnt);
+    app.gen_algo = new GenAlgo(app.constant.sim.car_amt,
+                               app.constant.sim.champions,
+                               app.constant.neuralNet.input_cnt,
+                               app.constant.neuralNet.hidden_layers,
+                               app.constant.neuralNet.hidden_neurons,
+                               app.constant.neuralNet.output_cnt);
 
     app.gen_algo.GenerateNewPopulation();
 }
