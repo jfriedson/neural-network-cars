@@ -7,9 +7,17 @@ function initSpeedToggle(app) {
 function toggleSimSpeed(app) {
 	app.loopControl.sim_fast_speed = !app.loopControl.sim_fast_speed;
 
-	app.loopControl.render.fps = app.loopControl.sim_fast_speed ? app.loopControl.render.fps_fast : app.loopControl.render.fps_normal;
-	app.loopControl.phys.iter_per_sec = app.loopControl.sim_fast_speed ? app.loopControl.phys.iter_per_sec_fast : app.loopControl.phys.iter_per_sec_normal;
-	app.loopControl.phys.steps_per_iter = app.loopControl.sim_fast_speed ? app.loopControl.phys.steps_per_iter_fast : app.loopControl.phys.steps_per_iter_normal;
+	
+	if (app.loopControl.sim_fast_speed) {
+		app.loopControl.render.fps = app.loopControl.render.fps_fast;
+		app.loopControl.phys.iter_per_sec = app.loopControl.phys.iter_per_sec_fast;
+		app.loopControl.phys.steps_per_iter = app.loopControl.phys.steps_per_iter_fast;
+	}
+	else {
+		app.loopControl.render.fps = app.loopControl.render.fps_normal;
+		app.loopControl.phys.iter_per_sec = app.loopControl.phys.iter_per_sec_normal;
+		app.loopControl.phys.steps_per_iter = app.loopControl.phys.steps_per_iter_normal;
+	}
 
 	app.loopControl.render.delay = 1000/app.loopControl.render.fps;
 	app.loopControl.phys.delay = 1000/app.loopControl.phys.iter_per_sec;

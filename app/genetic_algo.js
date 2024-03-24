@@ -37,7 +37,7 @@ class GenAlgo {
 
 	updateParams(recordKeeping) {
 		this.mutation_chance -= this.generation / 10000 + recordKeeping.score_time / 10000 + recordKeeping.chkpts_time / 10000;
-		this.mutation_chance = Math.min(Math.max(.05, mutation_chance_update, .3));
+		this.mutation_chance = Math.min(Math.max(.05, this.mutation_chance, .3));
 
 		this.learning_rate -= (this.generation/10000) + (recordKeeping.score_time/10000) + (recordKeeping.chkpts_time/10000)
 		this.learning_rate = Math.min(Math.max(.05, this.learning_rate), .25);
