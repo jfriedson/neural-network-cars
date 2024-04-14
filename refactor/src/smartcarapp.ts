@@ -8,6 +8,7 @@ import { TaskScheduler } from "./task_scheduling/task_scheduler";
 
 import { Car } from "./entities/car";
 import { Track } from "./entities/track";
+import { Scoreboard } from "./entities/scoreboard";
 
 /*
 	todo list
@@ -20,6 +21,8 @@ export class SmartCarApp {
 	private readonly renderer = new Renderer();
 	private readonly physicalWorld = new PhysicalWorld();
 
+	private readonly scoreboard = new Scoreboard();
+
 	private readonly taskScheduler = new TaskScheduler();
 	private readonly renderTask = new Task(this, this.renderLoop, 16);
 	private readonly physicsTask = new Task(this, this.physicsLoop, 16);
@@ -30,6 +33,8 @@ export class SmartCarApp {
 	async init() {
 		await this.renderer.init();
 		this.renderer.stage.scale = 5;
+
+		this.renderer.addChild(this.scoreboard);
 
 		this.renderer.stage.addChild(this.track.graphics);
 
@@ -44,10 +49,12 @@ export class SmartCarApp {
 	}
 
 	physicsLoop() {
+		this.scoreboard.tickPhysics();
 		this.physicalWorld.step();
 	}
 
 	renderLoop() {
+		this.scoreboard.tickRender();
 		this.renderer.render();
 	}
 
