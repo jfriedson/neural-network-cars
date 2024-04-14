@@ -9,12 +9,12 @@
     "scripts": {
         "webpack": "webpack",
         "webpack-dev-server": "webpack-dev-server",
-        "dev": "npm run webpack-dev-server -- --env mode=development",
-        "clean": "npx rimraf dist",
-        "build": "npm run webpack -- --env mode=production",
-        "start": "http-server dist -o",
         "lint": "eslint . --ext .ts,.tsx",
-        "es-check": "es-check"
+        "es-check": "es-check es2022 ./dist/*.js",
+        "clean": "npx rimraf dist",
+        "dev": "npm run webpack-dev-server -- --env mode=development",
+        "build": "npm run webpack -- --env mode=production",
+        "start": "http-server dist -o"
     },
     "author": "jfriedson",
     "license": "MIT",

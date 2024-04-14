@@ -16,7 +16,7 @@
         "lib": ["es2022", "DOM"]
     },
     "include": [
-        "./src/index.ts",
+        "./src/entry.ts",
         "./src/typings.d.ts",
         "webpack.config.ts",
         "webpack.dev.ts",
