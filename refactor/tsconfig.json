@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "es2022",
+        "module": "CommonJS",
+        "strict": true,
+        "declaration": false,
+        "removeComments": true,
+        "esModuleInterop": true,
+        "inlineSourceMap": true,
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "paths": {
+            "mini-signals": ["./node_modules/resource-loader/typings/mini-signals.d.ts"]
+        },
+        "lib": ["es2022", "DOM"]
+    },
+    "include": [
+        "./src/entry.ts",
+        "./src/typings.d.ts",
+        "webpack.config.ts",
+        "webpack.dev.ts",
+        "webpack.webpack.prod.ts"
+    ]
+}

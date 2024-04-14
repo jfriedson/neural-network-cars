@@ -10,7 +10,7 @@ function initRenderer(app) {
 		multisample: PIXI.MSAA_QUALITY.MEDIUM
 	});
 
-	document.body.appendChild(app.renderer.renderer.view);
+	document.body.appendChild(app.renderer.view);
 	app.renderer.renderer.view.oncontextmenu = function (e) {
 		e.preventDefault();
 	};

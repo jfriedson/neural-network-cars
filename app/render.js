@@ -200,10 +200,7 @@ function renderGraph(app, best_car) {
 		}
 		conn_activations.sort(sortConnActv);
 		for (const a in conn_activations) {
-			app.graph.graphics.lineStyle(
-				2, (conn_activations[a].actv << 24) + (conn_activations[a].actv << 16) + conn_activations[a].actv,
-				1, .5, true
-			);
+			app.graph.graphics.lineStyle(2, { h: 0, s: 0, v: Math.min(Math.max(0, conn_activations[a].actv), 100) }, 0.5, true);
 			app.graph.graphics.moveTo(x_offset + l * x_spacing, y_offset + conn_activations[a].w * y_spacing);
 			app.graph.graphics.lineTo(x_offset + (l + 1) * x_spacing, y_offset + conn_activations[a].n * y_spacing);
 		}
@@ -233,7 +230,7 @@ function renderGraph(app, best_car) {
 	}
 	conn_activations.sort(sortConnActv);
 	for (const a in conn_activations) {
-		app.graph.graphics.lineStyle(2, (conn_activations[a].actv << 24) + (conn_activations[a].actv << 16) + conn_activations[a].actv, 1, .5, true);
+		app.graph.graphics.lineStyle(2, { h: 0, s: 0, v: Math.min(Math.max(0, conn_activations[a].actv), 100) }, 0.5, true);
 		app.graph.graphics.moveTo(x_offset + net.hidden_layers.length * x_spacing, y_offset + conn_activations[a].w * y_spacing);
 		app.graph.graphics.lineTo(x_offset + (net.hidden_layers.length + 1) * x_spacing, y_offset + conn_activations[a].n * y_spacing);
 	}
@@ -241,24 +238,23 @@ function renderGraph(app, best_car) {
 	// input neurons
 	app.graph.graphics.lineStyle(0, 0, 0, .5, false);
 	for (const neuron in input) {
-		const gray = 0xff * Math.min(Math.max(0, input[neuron]), 1);
-		app.graph.graphics.beginFill((gray << 24) + (gray << 16) + gray, 1);
+		const gray = 100 * Math.min(Math.max(0, input[neuron]), 1);
+		app.graph.graphics.beginFill({ h: 0, s: 0, v: gray }, 1);
 		app.graph.graphics.drawCircle(x_offset, y_offset + neuron * y_spacing, 10);
 		app.graph.graphics.endFill();
 	}
 
 	// draw last hidden layer neurons
 	for (const neuron in layer_in) {
-		const gray = 0xff * Math.min(Math.max(0, layer_in[neuron]), 1);
-		app.graph.graphics.beginFill((gray << 24) + (gray << 16) + gray, 1);
+		const gray = 100 * Math.min(Math.max(0, layer_in[neuron]), 1);
+		app.graph.graphics.beginFill({ h: 0, s: 0, v: gray }, 1);
 		app.graph.graphics.drawCircle(x_offset + x_spacing, y_offset + neuron * y_spacing, 10);
 		app.graph.graphics.endFill();
 	}
 
 	for (const neuron in output) {
-		//graph.lineStyle(2, 0x000000, 1, .5, false);
-		const gray = 0xff * Math.min(Math.max(0, output[neuron]), 1);
-		app.graph.graphics.beginFill((gray << 24) + (gray << 16) + gray, 1);
+		const gray = 100 * Math.min(Math.max(0, output[neuron]), 1);
+		app.graph.graphics.beginFill({ h: 0, s: 0, v: gray }, 1);
 		app.graph.graphics.drawCircle(x_offset + 2 * x_spacing, y_offset + neuron * y_spacing, 10);
 		app.graph.graphics.endFill();
 	}
