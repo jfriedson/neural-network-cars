@@ -38,11 +38,10 @@ export class SmartCarApp {
 
 		this.renderer.stage.addChild(this.track.graphics);
 
-		for (let i = 0; i < 4; i++) {
+		for (let i = 0; i < 1; i++) {
 			const car = new Car(this.physicalWorld, this.renderer);
-			car.rigidBody.setTranslation({ x: 70 + i * 15, y: 0 }, true);
-			car.rigidBody.setAngvel(i + 1, true);
-			car.rigidBody.collider(0).setRestitution(1);
+			car.rigid_body.setTranslation({ x: 70 + i * 15, y: 30 }, true);
+			car.rigid_body.collider(0).setRestitution(1);
 
 			this.cars.push(car);
 		}
