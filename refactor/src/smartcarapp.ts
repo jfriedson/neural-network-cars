@@ -6,7 +6,7 @@ import { PhysicalWorld } from "./physics/physical_world";
 import { Task } from "./task_scheduling/task";
 import { TaskScheduler } from "./task_scheduling/task_scheduler";
 
-import { Car } from "./entities/car";
+import { Car } from "./entities/car/car";
 import { Track } from "./entities/track";
 import { Scoreboard } from "./entities/scoreboard";
 
