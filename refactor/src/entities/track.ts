@@ -2,6 +2,7 @@ import PIXI from "pixi.js";
 import RAPIER from "@dimforge/rapier2d-compat";
 
 import { PhysicalWorld } from "../physics/physical_world";
+import { CollisionGroup } from "../physics/collision_groups";
 
 
 export class Track {
@@ -10,7 +11,8 @@ export class Track {
 
 	constructor(physicalWorld: PhysicalWorld) {
 		const bodyDesc = RAPIER.RigidBodyDesc.fixed().setTranslation(100, 75);
-		const colliderDesc = RAPIER.ColliderDesc.cuboid(50, 2);
+		const colliderDesc = RAPIER.ColliderDesc.cuboid(50, 2)
+			.setCollisionGroups(CollisionGroup.isWall | CollisionGroup.withCar);
 
 		this.rigid_body = physicalWorld.createRigidBody(bodyDesc);
 		physicalWorld.createCollider(colliderDesc, this.rigid_body);
