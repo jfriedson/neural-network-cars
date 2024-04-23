@@ -71,7 +71,7 @@ Click on the canvas to toggle between normal and hyper speed
 
 
 ## Javascript libraries
-Rapier - Physics engine\
+p2-es - Physics engine\
 Pixi.js - WebGL (canvas fallback) renderer
 
 

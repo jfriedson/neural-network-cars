@@ -6,8 +6,9 @@
         "declaration": false,
         "removeComments": true,
         "esModuleInterop": true,
-        "inlineSourceMap": true,
+        "sourceMap": true,
         "moduleResolution": "node",
+        "resolveJsonModule": true,
         "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
         "paths": {
