@@ -36,9 +36,11 @@ module.exports = (env: { mode: "development" | "production" }) => {
 			},
 		},
 
-		plugins: [
-			new HtmlWebpackPlugin(),
-		],
+		plugins: [new HtmlWebpackPlugin({
+			title: "Deep Learning Cars by Josh Friedson",
+		})],
+
+		devtool: "source-map",
 	};
     const isDev = env.mode === "development";
     const webpackConfigFile = isDev ? "webpack.dev.ts" : "webpack.prod.ts";

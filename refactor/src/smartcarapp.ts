@@ -6,16 +6,10 @@ import { PhysicalWorld } from "./physics/physical_world";
 import { Task } from "./task_scheduling/task";
 import { TaskScheduler } from "./task_scheduling/task_scheduler";
 
-import { Car } from "./entities/car/car";
-import { Track } from "./entities/track";
-import { Scoreboard } from "./entities/scoreboard";
+import { Car } from "./entities/car";
+import { Track } from "./entities/track/track";
+import { Scoreboard } from "./rendering/scoreboard";
 
-/*
-	todo list
-	- implement car physics
-	- implement track objects
-	- handle physics callback
-*/
 
 export class SmartCarApp {
 	private readonly renderer = new Renderer();
@@ -32,7 +26,6 @@ export class SmartCarApp {
 
 	async init() {
 		await this.renderer.init();
-		this.renderer.stage.scale = 5;
 
 		this.renderer.addChild(this.scoreboard);
 
@@ -40,8 +33,6 @@ export class SmartCarApp {
 
 		for (let i = 0; i < 1; i++) {
 			const car = new Car(this.physicalWorld, this.renderer);
-			car.rigid_body.setTranslation({ x: 70 + i * 15, y: 30 }, true);
-			car.rigid_body.collider(0).setRestitution(1);
 
 			this.cars.push(car);
 		}
@@ -49,7 +40,7 @@ export class SmartCarApp {
 
 	physicsLoop() {
 		this.scoreboard.tickPhysics();
-		this.physicalWorld.step();
+		this.physicalWorld.step(.0167);
 	}
 
 	renderLoop() {

@@ -1,27 +1,31 @@
-import RAPIER from "@dimforge/rapier2d-compat";
+import { BeginContactEvent, World } from "p2-es";
 
-import { PhysicalNode } from "./physical_node"
+import { CollisionSubscriber } from "./collision_subscriber";
 
 
-export class PhysicalWorld extends RAPIER.World {
-	private readonly stepCallbacks = Array<PhysicalNode>();
-
-	static async init() {
-		await RAPIER.init();
-	}
+export class PhysicalWorld extends World {
+	private readonly collisionCallbacks = new Map<
+		number,
+		CollisionSubscriber
+	>();
 
 	constructor() {
-		super({ x: 0, y: 0 });
+		super({
+			gravity: [0, 0],
+		});
+
+		this.on("beginContact", (event) => {
+			this.collisionCallback.bind(this, event);
+		});
 	}
 
-	addNode(node: PhysicalNode) {
-		this.stepCallbacks.push(node);
-	}
+	private collisionCallback(event: BeginContactEvent) {
+		let subscriber = this.collisionCallbacks.get(event.bodyA.id);
+		if (subscriber !== undefined)
+			subscriber.collisionCallback(event.bodyB);
 
-	step() {
-		for (const stepCB of this.stepCallbacks)
-			stepCB.step();
-
-		super.step();
+		subscriber = this.collisionCallbacks.get(event.bodyB.id);
+		if (subscriber !== undefined)
+			subscriber.collisionCallback(event.bodyA);
 	}
 }
