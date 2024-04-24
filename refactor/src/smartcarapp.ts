@@ -8,7 +8,6 @@ import { TaskScheduler } from "./task_scheduling/task_scheduler";
 
 import { Car } from "./entities/car";
 import { Track } from "./entities/track/track";
-import { Checkpoint } from "./entities/track/checkpoint";
 import { Scoreboard } from "./rendering/scoreboard";
 
 
@@ -23,12 +22,10 @@ export class SmartCarApp {
 	private readonly physicsTask = new Task(this, this.physicsLoop, 16);
 
 	private readonly track = new Track(this.physicalWorld);
-	private readonly checkpoint = new Checkpoint(this.physicalWorld);
 	private readonly cars = new Array<Car>();
 
 	async init() {
 		await this.renderer.init();
-		this.renderer.stage.scale = 5;
 
 		this.renderer.addChild(this.scoreboard);
 
