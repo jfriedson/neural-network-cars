@@ -28,7 +28,6 @@ export class Car extends TopDownVehicle implements RenderNode {
 	constructor(physicalWorld: PhysicalWorld, renderer: Renderer) {
 		super(
 			new Body({
-				position: [100, 10],
 				mass: 0.8,
 			})
 		);

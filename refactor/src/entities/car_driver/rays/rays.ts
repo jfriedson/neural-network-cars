@@ -39,7 +39,7 @@ export class Rays implements RenderNode {
         this.graphics.clear();
 
         for (const ray of this.rays) {
-            let hitPoint = vec2.create();
+            const hitPoint = vec2.create();
 			ray.cast_result.getHitPoint(hitPoint, ray.physical);
             this.graphics.moveTo(
 				this.car.chassisBody.position[0],

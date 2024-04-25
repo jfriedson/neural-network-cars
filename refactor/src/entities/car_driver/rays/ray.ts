@@ -32,6 +32,8 @@ export class Ray {
         
         this.cast_result.reset();
         physicalWorld.raycast(this.cast_result, this.physical);
-        this.cast_result.fraction += this.cast_result.hasHit() ? 0 : 2;
+
+        if (!this.cast_result.hasHit())
+            this.cast_result.fraction = 1;
 	}
 }
