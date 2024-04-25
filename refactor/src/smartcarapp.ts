@@ -31,7 +31,7 @@ export class SmartCarApp {
 
 		this.renderer.stage.addChild(this.track.graphics);
 
-		for (let i = 0; i < 1; i++) {
+		for (let i = 0; i < 10; i++) {
 			const car = new Car(this.physicalWorld, this.renderer);
 
 			this.cars.push(car);
@@ -39,8 +39,11 @@ export class SmartCarApp {
 	}
 
 	physicsLoop() {
+		for (const car of this.cars)
+			car.step(this.physicalWorld);
+
 		this.scoreboard.tickPhysics();
-		this.physicalWorld.step(.0167);
+		this.physicalWorld.step(.02);
 	}
 
 	renderLoop() {
