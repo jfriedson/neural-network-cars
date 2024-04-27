@@ -1,5 +1,5 @@
-# Neural Network-Driven Cars Trained by a Genetic Algorithm
-This project demonstrates the process of using genetic algorithms to breed and mutate neural networks with the goal of navigating cars through a race track as quickly as possible.
+# Neural Network-Driven Cars Trained by Deep Reinforcement Learning
+This project demonstrates the process of using PPO deep reinforcement learning to breed and mutate neural networks with the goal of navigating cars through a race track as quickly as possible.
 
 You can see the live demo at my website: https://JoshFriedson.com/projects/genetic_cars
 
@@ -29,20 +29,20 @@ The network applies leakyRELU activation on the hidden layer and sigmoid activat
 The network outputs are then denormalized and applied to the physical body of the car.
 
 
-### Genetic Algorithms
-There are 3 different genetic algorithms which rotate in turn with the genome generation. They differ in how they introduce new genetics to the genome pool through the use of mutation and cross-breeding. Two algorithms splice new, random neurons into the best performing networks, while the third cross-breeds and mutates only the champion networks.
+### Deep Learning Algorithm
+PPO implemented in vanilla typescript, parallelized with webworkers. Will reimplement in WASM and WebGL, and benchmark the performance of all 3 for this task.
 
 Champions are determined by performance score which is a sum of rewards and deduction of penalties as follows:
 - Rewards
-    - yellow checkpoints - 100 points
-    - 10 points minus time in seconds between 2 checkpoints
+    - yellow checkpoints - distance between previous and current checkpoint
+    - timeout limit in seconds minus time between previous and current checkpoint in seconds
     - .9 * distance from previous checkpoint in a crash
     - .8 * distance from previous checkpoint in a timeout
 - Penalties
     - distance to next checkpoint in a crash or timeout
 
-The reason for rewarding more points in the event of a crash vs a timeout is that timeouts encourage use of the brakes which results in slower training times. Penalizing crashes also promotes the same behavior of brake use.\
-The reason for penalizing more than rewarding in a crash or timeout is to coax the cars to crash closer to the following checkpoint until they ultimately reach it.
+The reason for deducting more points for timeouts than crashes is that timeouts more strongly encourage the use of the brakes which results in slower training times.\
+The reason for penalizing crashes and timeouts is to coax the cars to crash closer to the following checkpoint until they ultimately reach it.
 
 
 ## How to create your own race track
@@ -64,20 +64,19 @@ Click on the canvas to toggle between normal and hyper speed
 
 ## More Features
 - Toggleable world step rate to speed up training immensely
-- Save and load leading champion's neural network weights using ctrl+c and ctrl+v with the canvas in focus
+- Save and load leading champion's neural network weights using ctrl+c and ctrl+v while the canvas in focus
 - Load a pre-trained network with an html button
 - Scoreboard
 - Graph of weight and neuron activations of best performing neural network
 
 
 ## Javascript libraries
-P2.js - Physics engine\
-Pixi.js - WebGL (canvas fallback) renderer\
-Lodash - deep cloning ability for genetic algorithm functionality
+p2-es - Physics engine\
+Pixi.js - WebGL (canvas fallback) renderer
 
 
 ## To do
-Implement webworkers for the simulation loop and neural network operations. Then, compare performance.
+Use webworkers for computationally intensive loops like forward and backward neural net propagation
 
 ---
 
