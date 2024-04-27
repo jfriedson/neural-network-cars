@@ -12,11 +12,14 @@ export class Checkpoint {
 			mass: 0,
 			position: position,
 			angle: angle,
+			collisionResponse: false,
 		});
 		this.body.addShape(
 			new Box({
 				width: 1,
 				height: length,
+				sensor: true,
+				collisionResponse: false,
 				collisionGroup: CollisionGroup.CHECKPOINT,
 				collisionMask: CollisionGroup.CAR,
 			})

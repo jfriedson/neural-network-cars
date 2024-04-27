@@ -40,6 +40,7 @@ export class Scoreboard implements RenderNode {
 
 		this.graphics.position = { x: 3, y: 3 };
 		this.graphics.scale = 0.15;
+		this.graphics.zIndex = 4;
 
 		this.buildText();
 	}

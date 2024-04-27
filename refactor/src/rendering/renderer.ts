@@ -10,13 +10,12 @@ export class Renderer extends PIXI.Application {
 		await super.init({
 			width: window.innerWidth,
 			height: window.innerHeight,
-			backgroundColor: 0x444444,
+			backgroundColor: 0x060f39,
 			autoDensity: true,
 			resolution: window.devicePixelRatio || 1,
 			antialias: true,
 			canvas: document.createElement("canvas"),
 			resizeTo: window,
-			autoStart: false,
 		});
 
 		document.body.appendChild(this.renderer.canvas);

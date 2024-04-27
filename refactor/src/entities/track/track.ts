@@ -12,7 +12,9 @@ export class Track {
 	readonly start: number[];
 	readonly walls = new Array<Wall>();
 	readonly checkpoints = new Array<Checkpoint>();
-	readonly graphics = new PIXI.Graphics();
+	readonly graphics = new PIXI.Graphics({
+		zIndex: 1,
+	});
 
 	constructor(physicalWorld: PhysicalWorld) {
 		this.start = silverstone_track.start;

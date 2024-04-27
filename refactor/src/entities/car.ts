@@ -7,9 +7,13 @@ import { RenderNode } from "../rendering/render_node";
 import { PhysicalWorld } from "../physics/physical_world";
 import { CollisionGroup } from "../physics/collision_groups";
 
+import { CarDriver } from "./car_driver/car_driver";
+
 
 export class Car extends TopDownVehicle implements RenderNode {
-	readonly graphics: PIXI.Graphics;
+	readonly graphics = new PIXI.Graphics({
+		zIndex: 3,
+	}).rect(-1, -2, 2, 4).fill(0xad6024);
 
 	steering_angle = 0;
 	engine_force_mag = 0;
@@ -19,10 +23,11 @@ export class Car extends TopDownVehicle implements RenderNode {
 	private readonly front_wheel: WheelConstraint;
 	private readonly rear_wheel: WheelConstraint;
 
+	private readonly driver: CarDriver;
+
 	constructor(physicalWorld: PhysicalWorld, renderer: Renderer) {
 		super(
 			new Body({
-				position: [100, 10],
 				mass: 0.8,
 			})
 		);
@@ -47,12 +52,19 @@ export class Car extends TopDownVehicle implements RenderNode {
 		});
 		this.addToWorld(physicalWorld);
 
-		this.graphics = new PIXI.Graphics().rect(-1, -2, 2, 4).fill(0xad6024);
 		renderer.addChild(this);
+
+		this.driver = new CarDriver(renderer, this);
+	}
+
+	step(physicalWorld: PhysicalWorld) {
+		this.driver.step(physicalWorld);
+
+		this.front_wheel.steerValue = this.steering_angle;
+		this.rear_wheel.engineForce = this.engine_force_mag;
 	}
 
 	render() {
-		this.front_wheel.engineForce = 12;
 		this.graphics.position = {
 			x: this.chassisBody.position[0],
 			y: this.chassisBody.position[1],
