@@ -1,58 +1,35 @@
 class NNet {
 	constructor(init, inputs, hidden_layers, output_layer, hidden_neurons) {
 		this.inputs = inputs;
-		this.hidden_layers = [];
-		this.output_layer = null;
+		this.hidden_layers = init ? [] : hidden_layers;
+		this.output_layer = init ? null : output_layer;
+
+		if (!init)
+			return;
 
 		// if init is true, create network with random weights and biases
-		if (init) {
+		this.hidden_layers.push(new NNLayer(
+			true,
+			inputs,
+			hidden_neurons,
+			Activations.leakyrelu
+		));
+
+		for (var hl = 1; hl < hidden_layers; hl++) {
 			this.hidden_layers.push(new NNLayer(
 				true,
-				inputs,
+				hidden_neurons,
 				hidden_neurons,
 				Activations.leakyrelu
 			));
-
-			for (var hl = 1; hl < hidden_layers; hl++) {
-				this.hidden_layers.push(new NNLayer(
-					true,
-					hidden_neurons,
-					hidden_neurons,
-					Activations.leakyrelu
-				));
-			}
-
-			this.output_layer = new NNLayer(
-				true,
-				hidden_neurons,
-				output_layer,
-				Activations.sigmoid
-			);
 		}
-		else {
-			this.hidden_layers.push(new NNLayer(
-				false,
-				this.inputs,
-				hidden_layers[0].neurons,
-				Activations.leakyrelu
-			));
 
-			for (var hl = 1; hl < hidden_layers.length; hl++) {
-				this.hidden_layers.push(new NNLayer(
-					false,
-					hidden_layers[hl - 1].neurons.length,
-					hidden_layers[hl].neurons,
-					Activations.leakyrelu
-				));
-			}
-
-			this.output_layer = new NNLayer(
-				false,
-				hidden_layers[hidden_layers.length - 1].neurons.length,
-				output_layer.neurons,
-				Activations.sigmoid
-			);
-		}
+		this.output_layer = new NNLayer(
+			true,
+			hidden_neurons,
+			output_layer,
+			Activations.sigmoid
+		);
 	}
 
 	forward(input) {

@@ -114,7 +114,7 @@ function initGenAlgo(app) {
 
 function initScoreboard(app) {
 	app.scoreboard = new PIXI.Text(
-		"click canvas to toggle sim speed\nphysics 0ips\nrenderer 0fps\n\nGeneration 1\nLeaderboard",
+		"click here to toggle training speed\nphysics 0ips\nrenderer 0fps\n\nGeneration 1\nLeaderboard",
 		{
 			fontFamily: 'Arial',
 			fontSize: 30,
