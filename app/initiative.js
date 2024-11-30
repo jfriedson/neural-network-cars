@@ -90,13 +90,24 @@ function initGraph(app) {
 				fill: 0xffffff,
 				align: 'left'
 			}
+		),
+		text2: new PIXI.Text(
+			"steering\ngas\nbrakes\ne-brake",
+			{
+				fontFamily: 'Arial',
+				fontSize: 26,
+				fill: 0xffffff,
+				align: 'left'
+			}
 		)
 	};
 
 	app.graph.graphics.zIndex = 4;
 	app.graph.text.zIndex = 4;
+	app.graph.text2.zIndex = 4;
 	app.renderer.stage.addChild(app.graph.graphics);
 	app.renderer.stage.addChild(app.graph.text);
+	app.renderer.stage.addChild(app.graph.text2);
 }
 
 function initGenAlgo(app) {

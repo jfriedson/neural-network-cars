@@ -82,6 +82,11 @@ function render(app, spawn_new_timer, recenter_camera) {
 	app.graph.text.scale.x = UI_scale_x;
 	app.graph.text.scale.y = UI_scale_y;
 
+	app.graph.text2.x = UI_center_x + 690 * UI_scale_x;
+	app.graph.text2.y = UI_center_y - 393 * UI_scale_y;
+	app.graph.text2.scale.x = UI_scale_x;
+	app.graph.text2.scale.y = UI_scale_y;
+
 	app.graph.graphics.x = UI_center_x + (240 * UI_scale_x);
 	app.graph.graphics.y = UI_center_y - (390 * UI_scale_y);
 	app.graph.graphics.scale.x = UI_scale_x;
